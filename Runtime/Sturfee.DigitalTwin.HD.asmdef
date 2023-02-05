@@ -1,0 +1,22 @@
+{
+    "name": "SturfeeVPS.DigitalTwin.HD",
+    "rootNamespace": "Sturfee.DigitalTwin.HD",
+    "references": [
+        "GUID:2cbab47f8915e7b41af88def2e9184f0",
+        "GUID:b73836c7c71bf844b8366030ac3db968",
+        "GUID:18d18f811ba286c49814567a3cfba688",
+        "GUID:cd765358a8c448244a46bf1a993363b7",
+        "GUID:7cf5bec77405b5c4cbf4b2c6bc166b20",
+        "GUID:f50b621c179b609419b395845029c660",
+        "GUID:3c92269389b449f41a89c80de0b0b31b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
