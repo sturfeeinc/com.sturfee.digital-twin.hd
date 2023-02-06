@@ -2,7 +2,7 @@
     "name": "com.sturfee.digitaltwin.hd",
     "version": "4.0.0",
     "displayName": "Sturfee VPS DigitalTwin HD",
-    "description": "library for Sturfee VPS DT HD",
+    "description": "Library for Sturfee VPS DT HD",
     "unity": "2021.3",
     "unityRelease": "9f1",
     "keywords": [

@@ -2,7 +2,6 @@ using Newtonsoft.Json;
 using SturfeeVPS.Core;
 using System;
 using System.Net;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,27 +11,43 @@ using UnityEngine.Networking;
 
 namespace Sturfee.DigitalTwin.HD
 {
-    public interface IDthdSceneDataProvider
+    public interface IDtHdProvider
     {
-        Task<SceneData> FetchSceneData(string DthdId);
-        Task DownloadAllAssets(string DthdId, SceneData _SceneData);
+        Task<DtHdLayout> DownloadDtHd(string dthdId);
+        Task<DtHdLayout> FetchSceneData(string DthdId);
+        Task DownloadAllAssets(string DthdId, DtHdLayout _SceneData);
     }
 
-    public class DthdSceneDataProvider : IDthdSceneDataProvider
+    public class DthdSceneDataProvider : IDtHdProvider
     {
         public DthdSceneDataProvider()
         {
-            ServicePointManager.DefaultConnectionLimit = 1000; 
+            ServicePointManager.DefaultConnectionLimit = 1000;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
 
-        public async Task<SceneData> FetchSceneData(string DthdId)
+        public async Task<DtHdLayout> DownloadDtHd(string dthdId)
+        {
+            try
+            {
+                var dtHdLayout = await FetchSceneData(dthdId);
+                await DownloadAllAssets(dthdId, dtHdLayout);
+                return dtHdLayout;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("error downloading");
+                throw;
+            }
+        }
+
+        public async Task<DtHdLayout> FetchSceneData(string DthdId)
         {
             // get download URL
             string url = DTHDConstants.DTHD_API + "/" + DthdId + "?full_details=true";
 
             try
-            {               
+            {
                 var uwr = new UnityWebRequest(url);
 
                 var dh = new DownloadHandlerBuffer();
@@ -40,8 +55,8 @@ namespace Sturfee.DigitalTwin.HD
 
                 uwr.method = UnityWebRequest.kHttpVerbGET;
                 await uwr.SendWebRequest();
-                
-                
+
+
 
                 if (uwr.result == UnityWebRequest.Result.ConnectionError) //uwr.isNetworkError || uwr.isHttpError)
                 {
@@ -49,42 +64,64 @@ namespace Sturfee.DigitalTwin.HD
                 }
                 else
                 {
-                    var item = JsonConvert.DeserializeObject<SceneData>(uwr.downloadHandler.text);
+                    var item = JsonConvert.DeserializeObject<DtHdLayout>(uwr.downloadHandler.text);
                     Debug.Log(uwr.downloadHandler.text);
                     return item;
                 }
 
             }
             catch (Exception e)
-            {           
+            {
             }
 
             return null;
         }
-    
-        public async Task DownloadAllAssets(string DthdId, SceneData _SceneData)
+
+        public async Task DownloadAllAssets(string DthdId, DtHdLayout layoutData)
         {
             // for building scan: /DTHD/{Hd Id}/Enhanced/SomeScan.glb
             // for all other assets: /DTHD/{Hd Id}/Assets/{dtHdAssetId}.glb
 
-            var BuildingFolder = Path.Combine(Application.persistentDataPath, "DTHD", DthdId,"Enhanced");
-            var AssetsFolder = Path.Combine(Application.persistentDataPath, "DTHD", DthdId, "Assets");
-            if (!Directory.Exists(BuildingFolder)) { Directory.CreateDirectory(BuildingFolder); }
-            if (!Directory.Exists(AssetsFolder)) { Directory.CreateDirectory(AssetsFolder); }
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", DthdId);
+            var buildingFolder = Path.Combine(baseFolder, "Enhanced");
+            var assetsFolder = Path.Combine(baseFolder, "Assets");
+            if (!Directory.Exists(buildingFolder)) { Directory.CreateDirectory(buildingFolder); }
+            if (!Directory.Exists(assetsFolder)) { Directory.CreateDirectory(assetsFolder); }
 
-            // get download URL
-            string url = _SceneData.EnhancedMesh;
+            // save the data file
+            File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(layoutData));
+
+            var downloadTasks = new List<Task>();
+
+            // download the main layout
+            downloadTasks.Add(DownloadFile(layoutData.EnhancedMesh, $"{buildingFolder}/Enhanced.glb"));
+
+            // download the additional assets
+            if (layoutData.Assets != null)
+            {
+                foreach (var asset in layoutData.Assets)
+                {
+                    downloadTasks.Add(DownloadFile(asset.FileUrl, $"{assetsFolder}/{asset.DtHdAssetId}.glb"));
+                }
+            }
+
+            // download the environment file
+            downloadTasks.Add(DownloadFile(layoutData.ReflectionProbeInfoUrl, $"{baseFolder}/environment.json"));
+
+            await Task.WhenAll(downloadTasks);
+        }
 
 
-            // download building mesh
+        private async Task DownloadFile(string url, string file)
+        {
             try
             {
-                if (File.Exists($"{BuildingFolder}/Enhanced.glb")) throw new Exception("Building Scan already downloaded");
+                if (File.Exists($"{file}")) throw new Exception($"File already downloaded ({file})");
 
                 var uwr = new UnityWebRequest(url);
 
                 uwr.method = UnityWebRequest.kHttpVerbGET;
-                var dh = new DownloadHandlerFile($"{BuildingFolder}/Enhanced.glb");
+                var dh = new DownloadHandlerFile($"{file}");
                 dh.removeFileOnAbort = true;
                 uwr.downloadHandler = dh;
                 await uwr.SendWebRequest();
@@ -95,41 +132,11 @@ namespace Sturfee.DigitalTwin.HD
                 else
                 {
                 }
-
             }
             catch (Exception e)
-            {               
-            }
-
-            // download assets
-            if (_SceneData.Assets == null) return;
-            foreach (Asset i in _SceneData.Assets)
             {
-                try
-                {
-                    if (File.Exists($"{AssetsFolder}/{i.DtHdAssetId}.glb")) throw new Exception("Asset already downloaded");;
-
-                    var uwr = new UnityWebRequest(i.FileUrl);
-
-                    uwr.method = UnityWebRequest.kHttpVerbGET;
-                    var dh = new DownloadHandlerFile($"{AssetsFolder}/{i.DtHdAssetId}.glb");
-                    dh.removeFileOnAbort = true;
-                    uwr.downloadHandler = dh;
-                    await uwr.SendWebRequest();
-
-                    if (uwr.result != UnityWebRequest.Result.Success) //(uwr.result == UnityWebRequest.Result.ConnectionError) //uwr.isNetworkError || uwr.isHttpError)
-                    {
-                    }
-                    else
-                    {
-                    }
-
-                }
-                catch (Exception e)
-                {               
-                }
+                throw;
             }
-            
         }
     }
 }
