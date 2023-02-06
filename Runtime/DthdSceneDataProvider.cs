@@ -14,8 +14,8 @@ namespace Sturfee.DigitalTwin.HD
     public interface IDtHdProvider
     {
         Task<DtHdLayout> DownloadDtHd(string dthdId);
-        Task<DtHdLayout> FetchSceneData(string DthdId);
-        Task DownloadAllAssets(string DthdId, DtHdLayout _SceneData);
+
+        // TODO: add a delete mechanic to remove local cache files
     }
 
     public class DthdSceneDataProvider : IDtHdProvider
@@ -41,7 +41,7 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
-        public async Task<DtHdLayout> FetchSceneData(string DthdId)
+        private async Task<DtHdLayout> FetchSceneData(string DthdId)
         {
             // get download URL
             string url = DTHDConstants.DTHD_API + "/" + DthdId + "?full_details=true";
@@ -77,7 +77,7 @@ namespace Sturfee.DigitalTwin.HD
             return null;
         }
 
-        public async Task DownloadAllAssets(string DthdId, DtHdLayout layoutData)
+        private async Task DownloadAllAssets(string DthdId, DtHdLayout layoutData)
         {
             // for building scan: /DTHD/{Hd Id}/Enhanced/SomeScan.glb
             // for all other assets: /DTHD/{Hd Id}/Assets/{dtHdAssetId}.glb
