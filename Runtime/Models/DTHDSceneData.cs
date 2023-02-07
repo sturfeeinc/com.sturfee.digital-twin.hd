@@ -69,7 +69,7 @@ namespace Sturfee.DigitalTwin.HD
         public string ScanMeshes { get; set; }
         public string EnhancedMesh { get; set; }
         public List<DtHdAsset> Assets { get; set; }
-        public string ReflectionProbeInfoUrl { get; set; }
+        public string DtEnvironmentUrl { get; set; }
     }
 
     // data for DtHd Environment.json

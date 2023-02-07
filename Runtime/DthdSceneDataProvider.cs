@@ -106,7 +106,7 @@ namespace Sturfee.DigitalTwin.HD
             }
 
             // download the environment file
-            downloadTasks.Add(DownloadFile(layoutData.ReflectionProbeInfoUrl, $"{baseFolder}/environment.json"));
+            downloadTasks.Add(DownloadFile(layoutData.DtEnvironmentUrl, $"{baseFolder}/environment.json"));
 
             await Task.WhenAll(downloadTasks);
         }
