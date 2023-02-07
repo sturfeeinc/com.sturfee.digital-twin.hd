@@ -1,7 +1,11 @@
 ﻿using UnityEngine;
 
-public class DtHdAssetInstance : MonoBehaviour
+namespace Sturfee.DigitalTwin.HD
 {
-    public string AssetId;
-    public string AssetItemId;
+    public class DtHdAssetInstance : MonoBehaviour
+    {
+        public string AssetId;
+        public string AssetItemId;
+    }
 }
+

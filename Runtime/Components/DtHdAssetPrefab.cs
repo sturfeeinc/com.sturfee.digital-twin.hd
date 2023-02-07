@@ -1,6 +1,10 @@
 ﻿using UnityEngine;
 
-public class DtHdAssetPrefab : MonoBehaviour
+namespace Sturfee.DigitalTwin.HD
 {
-    public string PrefabId;
+    public class DtHdAssetPrefab : MonoBehaviour
+    {
+        public string PrefabId;
+    }
 }
+
