@@ -1,6 +1,6 @@
 {
     "name": "com.sturfee.digital-twin.hd",
-    "version": "4.0.3",
+    "version": "4.0.4",
     "displayName": "Sturfee VPS DigitalTwin HD",
     "description": "Library for Sturfee VPS DT HD",
     "unity": "2021.3",

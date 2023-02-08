@@ -13,9 +13,9 @@ namespace Sturfee.DigitalTwin.HD
 {
     public interface IDtHdProvider
     {
+        bool IsCached(string dthdId);
         Task<DtHdLayout> DownloadDtHd(string dthdId);
-
-        // TODO: add a delete mechanic to remove local cache files
+        void DeleteCachedData(string dthdId);
     }
 
     public class DthdSceneDataProvider : IDtHdProvider
@@ -24,6 +24,23 @@ namespace Sturfee.DigitalTwin.HD
         {
             ServicePointManager.DefaultConnectionLimit = 1000;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        }
+
+        public bool IsCached(string dthdId)
+        {
+            // TODO: should set up some cache expiration strategy...
+
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            if(Directory.Exists(baseFolder))
+            {
+                var files = Directory.GetFiles(baseFolder);
+                if (files.Length > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public async Task<DtHdLayout> DownloadDtHd(string dthdId)
@@ -39,6 +56,15 @@ namespace Sturfee.DigitalTwin.HD
             {
                 Debug.LogError("error downloading");
                 throw;
+            }
+        }
+
+        public void DeleteCachedData(string dthdId)
+        {
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            if (Directory.Exists(baseFolder))
+            {
+                Directory.Delete(baseFolder, true);
             }
         }
 
