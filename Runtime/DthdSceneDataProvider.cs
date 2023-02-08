@@ -31,6 +31,7 @@ namespace Sturfee.DigitalTwin.HD
             try
             {
                 var dtHdLayout = await FetchSceneData(dthdId);
+                if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
                 await DownloadAllAssets(dthdId, dtHdLayout);
                 return dtHdLayout;
             }
@@ -46,6 +47,8 @@ namespace Sturfee.DigitalTwin.HD
             // get download URL
             string url = DTHDConstants.DTHD_API + "/" + DthdId + "?full_details=true";
 
+            SturfeeDebug.Log($"Fetching HD DT => {url}");
+
             try
             {
                 var uwr = new UnityWebRequest(url);
@@ -55,8 +58,6 @@ namespace Sturfee.DigitalTwin.HD
 
                 uwr.method = UnityWebRequest.kHttpVerbGET;
                 await uwr.SendWebRequest();
-
-
 
                 if (uwr.result == UnityWebRequest.Result.ConnectionError) //uwr.isNetworkError || uwr.isHttpError)
                 {

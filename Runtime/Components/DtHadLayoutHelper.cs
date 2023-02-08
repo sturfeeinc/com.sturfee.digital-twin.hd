@@ -2,7 +2,7 @@
 
 namespace Sturfee.DigitalTwin.HD
 {
-    public class DtHadLayoutHelper : MonoBehaviour
+    public class DtHdLayoutHelper : MonoBehaviour
     {
         public string DtHdId;
         public GameObject SpawnPoint;

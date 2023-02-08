@@ -130,7 +130,7 @@ namespace Sturfee.DigitalTwin.HD
                 {
                     // create a spawn point dummy
                     var layoutData = data as DtHdLayout;
-                    var helper = result.AddComponent<DtHadLayoutHelper>();
+                    var helper = result.AddComponent<DtHdLayoutHelper>();
                     helper.DtHdId = $"{layoutData.DtHdId}";
 
                     result.gameObject.name = $"DtHdLayout_{layoutData.DtHdId}";
@@ -151,12 +151,7 @@ namespace Sturfee.DigitalTwin.HD
                     }
 
                     // set the position
-                    var utmRef = new UtmPosition();
-                    utmRef.X = layoutData.RefX;
-                    utmRef.Y = layoutData.RefY;
-                    utmRef.Z = layoutData.RefZ;
-                    var gps = GeoCoordinateConverter.UtmToGps(utmRef);
-                    result.transform.position = Converters.GeoToUnityPosition(gps);
+                    result.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
 
                     Enhanced = result;
                 }
