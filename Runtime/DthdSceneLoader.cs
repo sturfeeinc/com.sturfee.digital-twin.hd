@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using System.Linq;
 using UnityEngine;
 using UnityGLTF;
 using UnityGLTF.Loader;
@@ -33,6 +34,9 @@ namespace Sturfee.DigitalTwin.HD
                 if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return; }
                 await _LoadDtHdAsync(dthdId, layoutData);
 
+                // FOR DEBUG
+                // await _LoadAllScanMeshes(dthdId, layoutData);
+
                 _parent.transform.Rotate(-90, 0, 180);
             }
             else
@@ -42,7 +46,7 @@ namespace Sturfee.DigitalTwin.HD
             }            
         }
 
-        public async Task _LoadDtHdAsync(string dthdId, DtHdLayout layoutData)
+        private async Task _LoadDtHdAsync(string dthdId, DtHdLayout layoutData)
         {
             // for building scan: /DTHD/{Hd Id}/Enhanced/SomeScan.glb
             // for all other assets: /DTHD/{Hd Id}/Assets/{dtHdAssetId}.glb
@@ -75,6 +79,31 @@ namespace Sturfee.DigitalTwin.HD
             {
                 await LoadLightingAndReflections($"{baseFolder}/environment.json");
             }
+        }
+
+        private async Task _LoadAllScanMeshes(string dthdId, DtHdLayout layoutData)
+        {
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            var scanMeshFolder = Path.Combine(baseFolder, "ScanMeshes");
+            if (!Directory.Exists(scanMeshFolder)) { throw new Exception("Assets not downloaded!"); }
+
+            // assuming parent container is already initialized
+            // load all scan meshes
+            foreach (var scanmesh in layoutData.ScanMeshes)
+            {
+                await ImportDtMesh($"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb", scanmesh, "DtHdScanMesh", _parent);
+            }
+        }
+
+        private async Task _LoadScanMesh(string dthdId, string ScanId, DtHdLayout layoutData)
+        {
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            var scanMeshFolder = Path.Combine(baseFolder, "ScanMeshes");
+            if (!Directory.Exists(scanMeshFolder)) { throw new Exception("Assets not downloaded!"); }
+
+            // assuming parent container is already initialized
+            // load scan mesh by scan id
+            await ImportDtMesh($"{scanMeshFolder}/{ScanId}.glb", layoutData.ScanMeshes.FirstOrDefault(a => a.DtHdScanId == ScanId), "DtHdScanMesh", _parent);
         }
 
         private async Task ImportDtMesh(string filePath, object data, string dataType, GameObject parent)
@@ -177,6 +206,15 @@ namespace Sturfee.DigitalTwin.HD
                     {
                         LoadedAssets[assetData.DtHdAssetId] = result;
                     }
+                }
+
+                if (objectType == "DtHdScanMesh")
+                {
+                    var scanMeshData = data as ScanMesh;
+
+                    result.transform.position = Converters.GeoToUnityPosition(scanMeshData.ScanLocation);
+                    // FOR TEST SCAN MESH
+                    result.transform.Rotate(-90, 0, 180);
                 }
             }
             catch (Exception e)

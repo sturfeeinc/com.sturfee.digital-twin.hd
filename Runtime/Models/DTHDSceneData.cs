@@ -8,7 +8,8 @@ namespace Sturfee.DigitalTwin.HD
 {
     public class DTHDConstants
     {
-        public static readonly string DTHD_API = "https://digitaltwin.devsturfee.com/hd/layout";
+        //PROD
+        public static readonly string DTHD_API = "https://digitaltwin.sturfee.com/hd/layout";
         public static readonly string TestID = "3745b04f-7465-4533-b84f-406690685845";
     }
 
@@ -66,7 +67,7 @@ namespace Sturfee.DigitalTwin.HD
         public float SpawnHeading { get; set; }
         public bool IsIndoor { get; set; }
         public bool IsPublic { get; set; }
-        public string ScanMeshes { get; set; }
+        public List<ScanMesh> ScanMeshes { get; set; }
         public string EnhancedMesh { get; set; }
         public List<DtHdAsset> Assets { get; set; }
         public string DtEnvironmentUrl { get; set; }

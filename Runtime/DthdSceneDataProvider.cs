@@ -5,6 +5,7 @@ using System.Net;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -20,6 +21,8 @@ namespace Sturfee.DigitalTwin.HD
 
     public class DthdSceneDataProvider : IDtHdProvider
     {
+        // Directories
+        private string baseFolder, buildingFolder, scanMeshFolder, assetsFolder;
         public DthdSceneDataProvider()
         {
             ServicePointManager.DefaultConnectionLimit = 1000;
@@ -47,10 +50,50 @@ namespace Sturfee.DigitalTwin.HD
         {
             try
             {
+                SetUpDirectories(dthdId);
                 var dtHdLayout = await FetchSceneData(dthdId);
                 if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
                 await DownloadAllAssets(dthdId, dtHdLayout);
+                
+                // FOR DEBUG
+                // await AllScanMesh(dthdId);
+                // Debug.Log($"[DthdSceneDataProvider] :: DTHD ID: {dthdId}");
+
                 return dtHdLayout;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("error downloading");
+                throw;
+            }
+        }
+
+        public async Task AllScanMesh(string dthdId)
+        {
+            try
+            {
+                SetUpDirectories(dthdId);
+                var dtHdLayout = await FetchSceneData(dthdId);
+                if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+                await DownloadAllScanMeshes(dthdId, dtHdLayout);
+                // return dtHdLayout;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("error downloading");
+                throw;
+            }
+        }
+
+        public async Task ScanMeshById(string dthdId, string scanId)
+        {
+            try
+            {
+                SetUpDirectories(dthdId);
+                var dtHdLayout = await FetchSceneData(dthdId);
+                if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+                await DownloadScanMesh(dthdId, scanId, dtHdLayout);
+                // return dtHdLayout;
             }
             catch (Exception e)
             {
@@ -70,6 +113,15 @@ namespace Sturfee.DigitalTwin.HD
 
         private async Task<DtHdLayout> FetchSceneData(string DthdId)
         {
+            // if layout already exists, load the layout file
+            var dataFilePath = Path.Combine(baseFolder, "data.json");
+            if (File.Exists(dataFilePath))
+            {
+                var dataJson = File.ReadAllText(dataFilePath);
+                var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
+                return layoutData;
+            }
+
             // get download URL
             string url = DTHDConstants.DTHD_API + "/" + DthdId + "?full_details=true";
 
@@ -106,17 +158,9 @@ namespace Sturfee.DigitalTwin.HD
 
         private async Task DownloadAllAssets(string DthdId, DtHdLayout layoutData)
         {
-            // for building scan: /DTHD/{Hd Id}/Enhanced/SomeScan.glb
-            // for all other assets: /DTHD/{Hd Id}/Assets/{dtHdAssetId}.glb
-
-            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", DthdId);
-            var buildingFolder = Path.Combine(baseFolder, "Enhanced");
-            var assetsFolder = Path.Combine(baseFolder, "Assets");
-            if (!Directory.Exists(buildingFolder)) { Directory.CreateDirectory(buildingFolder); }
-            if (!Directory.Exists(assetsFolder)) { Directory.CreateDirectory(assetsFolder); }
-
             // save the data file
-            File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(layoutData));
+            if (!File.Exists(Path.Combine(baseFolder, "data.json")))
+                File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(layoutData));
 
             var downloadTasks = new List<Task>();
 
@@ -138,6 +182,52 @@ namespace Sturfee.DigitalTwin.HD
             await Task.WhenAll(downloadTasks);
         }
 
+
+        private async Task DownloadAllScanMeshes(string DthdId, DtHdLayout layoutData)
+        {
+            // save the data file
+            if (!File.Exists(Path.Combine(baseFolder, "data.json")))
+                File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(layoutData));
+
+            var downloadTasks = new List<Task>();
+
+            // download all scan meshes
+            if (layoutData.ScanMeshes != null)
+            {
+                foreach (var scanmesh in layoutData.ScanMeshes)
+                {
+                    downloadTasks.Add(DownloadFile(scanmesh.ScanMeshUrl, $"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb"));
+                }
+            }
+
+            await Task.WhenAll(downloadTasks);
+        }
+
+        private async Task DownloadScanMesh(string DthdId, string ScanId, DtHdLayout layoutData)
+        {
+            // save the data file
+            if (!File.Exists(Path.Combine(baseFolder, "data.json")))
+                File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(layoutData));
+            
+            // download target scan mesh
+            var fileUrl = layoutData.ScanMeshes.FirstOrDefault(a => a.DtHdScanId == ScanId).ScanMeshUrl;
+            await DownloadFile(fileUrl, $"{scanMeshFolder}/{ScanId}.glb");
+        }
+
+        private void SetUpDirectories(string DthdId)
+        {
+            // for building scan: /DTHD/{Hd Id}/Enhanced/SomeScan.glb
+            // for scan mesh: /DTHD/{Hd Id}/ScanMeshes/{Scan Id}.glb
+            // for all other assets: /DTHD/{Hd Id}/Assets/{dtHdAssetId}.glb
+
+            baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", DthdId);
+            buildingFolder = Path.Combine(baseFolder, "Enhanced");
+            scanMeshFolder = Path.Combine(baseFolder, "ScanMeshes");
+            assetsFolder = Path.Combine(baseFolder, "Assets");
+            if (!Directory.Exists(buildingFolder)) { Directory.CreateDirectory(buildingFolder); }
+            if (!Directory.Exists(scanMeshFolder)) { Directory.CreateDirectory(scanMeshFolder); }
+            if (!Directory.Exists(assetsFolder)) { Directory.CreateDirectory(assetsFolder); }
+        }
 
         private async Task DownloadFile(string url, string file)
         {
