@@ -32,6 +32,14 @@ namespace Sturfee.DigitalTwin.HD
     }
 
     [Serializable]
+    public enum AssetType
+    {
+        Prop,
+        ProductGroup,
+        ReplaceableSurface
+    }
+
+    [Serializable]
     public class DtHdAsset
     {
         public string DtHdAssetId;
@@ -43,7 +51,7 @@ namespace Sturfee.DigitalTwin.HD
         public string Format;
         public DateTime CreatedDate;
         public DateTime UpdatedDate;
-        public string AssetType;
+        public AssetType AssetType;
         public string ExternalRefId;
         public string EditMode;
         public string EditRole;
