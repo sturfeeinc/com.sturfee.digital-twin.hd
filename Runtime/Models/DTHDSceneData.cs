@@ -12,78 +12,81 @@ namespace Sturfee.DigitalTwin.HD
         public static readonly string TestID = "3745b04f-7465-4533-b84f-406690685845";
     }
 
+    [Serializable]
     public class DtHdAssetItem
     {
-        public string DtHdAssetId { get; set; }
-        public string DtHdAssetItemId { get; set; }
-        public string Name { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
-        public GeoLocation Location { get; set; }
-        public float LocalX { get; set; }
-        public float LocalY { get; set; }
-        public float LocalZ { get; set; }
-        public float RotationX { get; set; }
-        public float RotationY { get; set; }
-        public float RotationZ { get; set; }
-        public float RotationW { get; set; }
-        public float Scale { get; set; }
+        public string DtHdAssetId;
+        public string DtHdAssetItemId;
+        public string Name;
+        public DateTime CreatedDate;
+        public DateTime UpdatedDate;
+        public GeoLocation Location;
+        public float LocalX;
+        public float LocalY;
+        public float LocalZ;
+        public float RotationX;
+        public float RotationY;
+        public float RotationZ;
+        public float RotationW;
+        public float Scale;
     }
 
+    [Serializable]
     public class DtHdAsset
     {
-        public string DtHdAssetId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public List<DtHdAssetItem> Items { get; set; }
-        public string FileUrl { get; set; }
-        public int FileSizeBytes { get; set; }
-        public string Format { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
-        public string AssetType { get; set; }
-        public string ExternalRefId { get; set; }
-        public string EditMode { get; set; }
-        public string EditRole { get; set; }
-        public string PhysicsMode { get; set; }
+        public string DtHdAssetId;
+        public string Name;
+        public string Description;
+        public List<DtHdAssetItem> Items;
+        public string FileUrl;
+        public int FileSizeBytes;
+        public string Format;
+        public DateTime CreatedDate;
+        public DateTime UpdatedDate;
+        public string AssetType;
+        public string ExternalRefId;
+        public string EditMode;
+        public string EditRole;
+        public string PhysicsMode;
     }
 
+    [Serializable]
     public class DtHdLayout
     {
-        public string DtHdId { get; set; }
-        public string UserId { get; set; }
-        public string Name { get; set; }
-        public GeoLocation Location { get; set; }
-        public double RefX { get; set; }
-        public double RefY { get; set; }
-        public double RefZ { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
-        public int FileSizeBytes { get; set; }
-        public float SpawnPositionX { get; set; }
-        public float SpawnPositionY { get; set; }
-        public float SpawnPositionZ { get; set; }
-        public float SpawnHeading { get; set; }
-        public bool IsIndoor { get; set; }
-        public bool IsPublic { get; set; }
-        public string ScanMeshes { get; set; }
-        public string EnhancedMesh { get; set; }
-        public List<DtHdAsset> Assets { get; set; }
-        public string DtEnvironmentUrl { get; set; }
+        public string DtHdId;
+        public string UserId;
+        public string Name;
+        public GeoLocation Location;
+        public double RefX;
+        public double RefY;
+        public double RefZ;
+        public DateTime CreatedDate;
+        public DateTime UpdatedDate;
+        public int FileSizeBytes;
+        public float SpawnPositionX;
+        public float SpawnPositionY;
+        public float SpawnPositionZ;
+        public float SpawnHeading;
+        public bool IsIndoor;
+        public bool IsPublic;
+        public string ScanMeshes;
+        public string EnhancedMesh;
+        public List<DtHdAsset> Assets;
+        public string DtEnvironmentUrl;
     }
 
     // data for DtHd Environment.json
     [Serializable]
     public class DtEnvironment
     {
-        public UnityEnvironment Unity { get; set; }
+        public UnityEnvironment Unity;
     }
 
     [Serializable]
     public class UnityEnvironment
     {
-        public UnityReflectionProbe[] ReflectionProbes { get; set; }
-        public UnityLight[] Lights { get; set; }
+        public UnityReflectionProbe[] ReflectionProbes;
+        public UnityLight[] Lights;
     }
 
     public enum ReflectionProbeType
@@ -96,26 +99,26 @@ namespace Sturfee.DigitalTwin.HD
     [Serializable]
     public class UnityReflectionProbe
     {
-        public Guid ReflectionProbeId { get; set; }
-        public Guid? DtHdId { get; set; }
-        public Guid UserId { get; set; }
+        public Guid ReflectionProbeId;
+        public Guid? DtHdId;
+        public Guid UserId;
 
-        public string Name { get; set; }
-        public int Importance { get; set; }
-        public float Intensity { get; set; }
-        public bool BoxProjection { get; set; }
-        public float BoxSize { get; set; }
-        public ReflectionProbeType Type { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+        public string Name;
+        public int Importance;
+        public float Intensity;
+        public bool BoxProjection;
+        public float BoxSize;
+        public ReflectionProbeType Type;
+        public DateTime CreatedDate;
+        public DateTime UpdatedDate;
 
-        public double Lat { get; set; }
-        public double Lon { get; set; }
-        public double Alt { get; set; }
+        public double Lat;
+        public double Lon;
+        public double Alt;
 
-        public float LocalX { get; set; }
-        public float LocalY { get; set; }
-        public float LocalZ { get; set; }
+        public float LocalX;
+        public float LocalY;
+        public float LocalZ;
     }
 
     public enum LightType
@@ -142,40 +145,40 @@ namespace Sturfee.DigitalTwin.HD
     [Serializable]
     public class UnityLight
     {
-        public Guid LightId { get; set; }
-        public Guid? DtHdId { get; set; }
-        public Guid UserId { get; set; }
+        public Guid LightId;
+        public Guid? DtHdId;
+        public Guid UserId;
 
-        public string Name { get; set; }
-        public LightType LightType { get; set; }
+        public string Name;
+        public LightType LightType;
 
-        public bool IsMainLight { get; set; }
+        public bool IsMainLight;
 
-        public float Range { get; set; }
-        public float SpotAngle { get; set; }
+        public float Range;
+        public float SpotAngle;
 
-        public float ColorR { get; set; }
-        public float ColorG { get; set; }
-        public float ColorB { get; set; }
+        public float ColorR;
+        public float ColorG;
+        public float ColorB;
 
-        public float Intensity { get; set; }
-        public ShadowType ShadowType { get; set; }
-        public LightMode LightMode { get; set; }
+        public float Intensity;
+        public ShadowType ShadowType;
+        public LightMode LightMode;
 
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+        public DateTime CreatedDate;
+        public DateTime UpdatedDate;
 
-        public double Lat { get; set; }
-        public double Lon { get; set; }
-        public double Alt { get; set; }
+        public double Lat;
+        public double Lon;
+        public double Alt;
 
-        public float LocalX { get; set; }
-        public float LocalY { get; set; }
-        public float LocalZ { get; set; }
+        public float LocalX;
+        public float LocalY;
+        public float LocalZ;
 
-        public float RotationX { get; set; }
-        public float RotationY { get; set; }
-        public float RotationZ { get; set; }
-        public float RotationW { get; set; }
+        public float RotationX;
+        public float RotationY;
+        public float RotationZ;
+        public float RotationW;
     }
 }
