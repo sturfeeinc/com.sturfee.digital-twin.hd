@@ -43,7 +43,7 @@ namespace Sturfee.DigitalTwin.HD
             {
                 // TODO: we should go download this data and still load everything...
                 Debug.LogError($"Error :: No local DT HD data file for {dthdId}");
-            }            
+            }
         }
 
         private async Task _LoadDtHdAsync(string dthdId, DtHdLayout layoutData)
@@ -317,5 +317,6 @@ namespace Sturfee.DigitalTwin.HD
 
             reflectionProbe.RenderProbe();
         }
+    
     }
 }
