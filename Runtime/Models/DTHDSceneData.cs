@@ -37,7 +37,7 @@ namespace Sturfee.DigitalTwin.HD
     {
         Prop,
         ProductGroup,
-        ReplaceableSurface
+        EditableSurface
     }
 
     [Serializable]
