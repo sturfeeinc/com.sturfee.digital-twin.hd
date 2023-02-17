@@ -75,30 +75,34 @@ namespace Sturfee.DigitalTwin.HD
 
             SturfeeDebug.Log($"Fetching HD DT => {url}");
 
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.ContentType = "application/json; charset=utf-8";
+            // TODO: auth
+
             try
             {
-                var uwr = new UnityWebRequest(url);
-
-                var dh = new DownloadHandlerBuffer();
-                uwr.downloadHandler = dh;
-
-                uwr.method = UnityWebRequest.kHttpVerbGET;
-                await uwr.SendWebRequest();
-
-                if (uwr.result == UnityWebRequest.Result.ConnectionError) //uwr.isNetworkError || uwr.isHttpError)
+                var response = await request.GetResponseAsync() as HttpWebResponse;
+                if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    Debug.Log("error downloading");
-                }
-                else
-                {
-                    var item = JsonConvert.DeserializeObject<DtHdLayout>(uwr.downloadHandler.text);
-                    Debug.Log(uwr.downloadHandler.text);
-                    return item;
+                    Debug.LogError($"ERROR:: API => {response.StatusCode} - {response.StatusDescription}");
+                    Debug.LogError(response);
+                    throw new Exception(response.StatusDescription);
                 }
 
+                StreamReader reader = new StreamReader(response.GetResponseStream());
+                string jsonResponse = reader.ReadToEnd();
+
+                Debug.Log(jsonResponse);
+
+                var result = JsonConvert.DeserializeObject<DtHdLayout>(jsonResponse);
+                return result;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
+                Debug.LogError($"Error getting metadata for DT HD with ID = {DthdId}");
+                Debug.LogError(ex);
+                throw;
             }
 
             return null;

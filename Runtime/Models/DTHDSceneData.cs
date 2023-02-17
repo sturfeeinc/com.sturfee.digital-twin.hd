@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using SturfeeVPS.Core;
+using Newtonsoft.Json;
 
 namespace Sturfee.DigitalTwin.HD
 {
     public class DTHDConstants
     {
-        public static readonly string DTHD_API = "https://digitaltwin.devsturfee.com/hd/layout";
+        public static readonly string DTHD_API = "https://digitaltwin.sturfee.com/hd/layout";
         public static readonly string TestID = "3745b04f-7465-4533-b84f-406690685845";
     }
 
@@ -77,10 +78,35 @@ namespace Sturfee.DigitalTwin.HD
         public float SpawnHeading;
         public bool IsIndoor;
         public bool IsPublic;
-        public string ScanMeshes;
+        public List<ScanMesh> ScanMeshes;
         public string EnhancedMesh;
         public List<DtHdAsset> Assets;
         public string DtEnvironmentUrl;
+    }
+
+    [Serializable]
+    public class ScanMesh
+    {
+        public string DtHdScanId;
+        public string Status;
+        public string SiteName;
+        public string ScanMeshUrl;
+
+        public VpsHdSite VpsHdSite;
+
+    }
+
+    [Serializable]
+    public class VpsHdSite
+    {
+        [JsonProperty("site_id")]
+        public string SiteId;
+        public string Name;
+        [JsonProperty("dthd_id")]
+        public string DtHdId;
+        [JsonProperty("dtscan_id")]
+        public string DtScanId;
+
     }
 
     // data for DtHd Environment.json
