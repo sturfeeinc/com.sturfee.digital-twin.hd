@@ -137,18 +137,8 @@ namespace Sturfee.DigitalTwin.HD
 
                     helper.SpawnPoint = new GameObject($"DtHdSpawnPoint");
                     helper.SpawnPoint.transform.SetParent(result.transform);
-
-                    // only for testing
-                    if (layoutData.DtHdId == "3745b04f-7465-4533-b84f-406690685845")
-                    {
-                        helper.SpawnPoint.transform.localPosition = new Vector3(3.31999993f, 5.73000002f, 0.693000019f);
-                        helper.SpawnPoint.transform.Rotate(new Vector3(180 - 90, 90, 90));
-                    }
-                    else
-                    {
-                        helper.SpawnPoint.transform.localPosition = new Vector3(layoutData.SpawnPositionX, layoutData.SpawnPositionY, layoutData.SpawnPositionZ);
-                        helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
-                    }
+                    helper.SpawnPoint.transform.localPosition = new Vector3(layoutData.SpawnPositionX, layoutData.SpawnPositionY, layoutData.SpawnPositionZ);
+                    helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
 
                     // set the position
                     result.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
