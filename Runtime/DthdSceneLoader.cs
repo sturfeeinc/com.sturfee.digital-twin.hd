@@ -34,6 +34,9 @@ namespace Sturfee.DigitalTwin.HD
                 await _LoadDtHdAsync(dthdId, layoutData);
 
                 _parent.transform.Rotate(-90, 0, 180);
+
+                // set the position
+                Enhanced.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
             }
             else
             {
@@ -140,8 +143,8 @@ namespace Sturfee.DigitalTwin.HD
                     helper.SpawnPoint.transform.localPosition = new Vector3(layoutData.SpawnPositionX, layoutData.SpawnPositionY, layoutData.SpawnPositionZ);
                     helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
 
-                    // set the position
-                    result.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
+                    // // set the position
+                    // result.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
 
                     Enhanced = result;
                 }
