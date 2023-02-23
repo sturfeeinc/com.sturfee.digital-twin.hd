@@ -90,23 +90,66 @@ namespace Sturfee.DigitalTwin.HD
         public string DtHdScanId;
         public string Status;
         public string SiteName;
+        public string Thumbnail;
+        public DateTime CreatedDate;
+        public DateTime UpdatedDate;
+        public GeoLocation ScanLocation;
+        public double RefX;
+        public double RefY;
+        public double RefZ;
+        public int Floor;
         public string ScanMeshUrl;
-
         public VpsHdSite VpsHdSite;
 
     }
 
+    // [Serializable]
+    // public class VpsHdSite
+    // {
+    //     [JsonProperty("site_id")]
+    //     public string SiteId;
+    //     public string Name;
+    //     [JsonProperty("dthd_id")]
+    //     public string DtHdId;
+    //     [JsonProperty("dtscan_id")]
+    //     public string DtScanId;
+
+    // }
+
     [Serializable]
     public class VpsHdSite
     {
-        [JsonProperty("site_id")]
-        public string SiteId;
-        public string Name;
-        [JsonProperty("dthd_id")]
-        public string DtHdId;
-        [JsonProperty("dtscan_id")]
-        public string DtScanId;
+        public string thumbnailUrl;
+        public SiteInfo siteInfo;
+        public string anchorMesh;
+    }
 
+    [Serializable]
+    public class SiteInfo
+    {
+        public string site_id;
+        public string name;
+        public string dthd_id;
+        public string dtscan_id;
+        public string thumbnail_id;
+        public DateTime createdDate;
+        public DateTime updatedDate;
+        public int floor;
+        public bool isIndoor;
+        public double refX;
+        public double refY;
+        public double refZ;
+        public string source;
+        public string platform;
+        public string s3_key;
+        public double longitude;
+        public double latitude;
+        public int utm_lon_zone;
+        public string utm_lat_zone;
+        public float radius;
+        public bool active;
+        public float terrainAdjustment;
+        public float projectionErrorThreshold;
     }
 
     // data for DtHd Environment.json

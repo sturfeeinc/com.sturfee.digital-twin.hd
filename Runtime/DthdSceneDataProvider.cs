@@ -50,7 +50,6 @@ namespace Sturfee.DigitalTwin.HD
         {
             try
             {
-                SetUpDirectories(dthdId);
                 var dtHdLayout = await FetchSceneData(dthdId);
                 if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
                 await DownloadAllAssets(dthdId, dtHdLayout);
@@ -113,6 +112,9 @@ namespace Sturfee.DigitalTwin.HD
 
         private async Task<DtHdLayout> FetchSceneData(string DthdId)
         {
+            SetUpDirectories(DthdId);
+            Debug.Log($"[DthdSceneDataProvider] dthd id: {DthdId}, path: {baseFolder}");
+            
             // if layout already exists, load the layout file
             var dataFilePath = Path.Combine(baseFolder, "data.json");
             if (File.Exists(dataFilePath))
@@ -162,6 +164,7 @@ namespace Sturfee.DigitalTwin.HD
 
         private async Task DownloadAllAssets(string DthdId, DtHdLayout layoutData)
         {
+            SetUpDirectories(DthdId);
             // save the data file
             if (!File.Exists(Path.Combine(baseFolder, "data.json")))
                 File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(layoutData));
