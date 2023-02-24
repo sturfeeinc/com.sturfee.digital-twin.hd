@@ -32,7 +32,19 @@ namespace Sturfee.DigitalTwin.HD
                 if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: No DT HD data found in file for {dthdId}"); return; }
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
                 if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return; }
-                await _LoadDtHdAsync(dthdId, layoutData);
+                
+                if (layoutData.EnhancedMesh != null)
+                {
+                    await _LoadDtHdAsync(dthdId, layoutData);
+                }
+                // else if (layoutData.ScanMeshes != null)
+                // {
+                //     await _LoadAllScanMeshes(dthdId, layoutData);
+                // }
+                else
+                {
+                    throw new Exception("no mesh to load");
+                }
 
                 // FOR DEBUG
                 // await _LoadAllScanMeshes(dthdId, layoutData);
