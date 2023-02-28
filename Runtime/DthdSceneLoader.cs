@@ -262,7 +262,7 @@ namespace Sturfee.DigitalTwin.HD
             reflectionProbe.importance = data.Importance;
             reflectionProbe.intensity = data.Intensity;
             reflectionProbe.boxProjection = data.BoxProjection;
-            reflectionProbe.size = Vector3.one * data.BoxSize;
+            reflectionProbe.size = new Vector3(data.BoxSizeX, data.BoxSizeY, data.BoxSizeZ);
 
             reflectionProbe.timeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode.AllFacesAtOnce;
             reflectionProbe.refreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode.ViaScripting;
