@@ -305,6 +305,7 @@ namespace Sturfee.DigitalTwin.HD
             var light = new GameObject($"{data.Name}").AddComponent<Light>();
             light.gameObject.transform.SetParent(parent.transform);
             light.gameObject.transform.localPosition = new Vector3(data.LocalX, data.LocalY, data.LocalZ);
+            light.gameObject.transform.localRotation = new Quaternion(data.RotationX, data.RotationY, data.RotationZ, data.RotationW);
 
             light.type = GetLightType(data);
             light.range = data.Range;
