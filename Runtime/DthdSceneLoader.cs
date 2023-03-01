@@ -35,6 +35,12 @@ namespace Sturfee.DigitalTwin.HD
 
                 _parent.transform.Rotate(-90, 0, 180);
 
+                // load the environment (reflection probes, lighting, etc)
+                if (File.Exists($"{baseFolder}/dt_environment.json"))
+                {
+                    await LoadLightingAndReflections($"{baseFolder}/dt_environment.json");
+                }
+
                 // set the position
                 Enhanced.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
             }
@@ -72,12 +78,6 @@ namespace Sturfee.DigitalTwin.HD
             // load the asset items (instances)
             Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: Loading Asset Instances...");
             LoadAssetItems(layoutData.Assets);
-
-            // load the environment (reflection probes, lighting, etc)
-            if (File.Exists($"{baseFolder}/environment.json"))
-            {
-                await LoadLightingAndReflections($"{baseFolder}/environment.json");
-            }
         }
 
         private async Task ImportDtMesh(string filePath, object data, string dataType, GameObject parent)
@@ -207,7 +207,7 @@ namespace Sturfee.DigitalTwin.HD
                 }
             }
         }
-    
+
         private void LoadAssetItems(List<DtHdAsset> assets)
         {
             foreach (var asset in assets)
@@ -246,9 +246,32 @@ namespace Sturfee.DigitalTwin.HD
 
                 if (envData != null && envData.Unity != null)
                 {
+                    var parent = new GameObject($"Lighting-and-Reflections");
+                    parent.transform.SetParent(Enhanced.transform);
+                    parent.transform.localPosition = Vector3.zero;
+
                     foreach (var dtReflection in envData.Unity.ReflectionProbes)
                     {
-                        LoadReflectionProbe(dtReflection, Enhanced);
+                        try
+                        {
+                            LoadReflectionProbe(dtReflection, parent);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError(ex);
+                        }
+                    }
+
+                    foreach (var light in envData.Unity.Lights)
+                    {
+                        try
+                        {
+                            LoadLights(light, parent);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError(ex);
+                        }
                     }
                 }
             }
@@ -272,6 +295,69 @@ namespace Sturfee.DigitalTwin.HD
 
             reflectionProbe.RenderProbe();
         }
-    
+
+        private void LoadLights(UnityLight data, GameObject parent)
+        {
+            var light = new GameObject($"{data.Name}").AddComponent<Light>();
+            light.gameObject.transform.SetParent(parent.transform);
+            light.gameObject.transform.localPosition = new Vector3(data.LocalX, data.LocalY, data.LocalZ);
+
+            light.type = GetLightType(data);
+            light.range = data.Range;
+            light.spotAngle = data.SpotAngle;
+            light.color = new Color(data.ColorR, data.ColorG, data.ColorB);
+            light.intensity = data.Intensity;
+            light.shadows = GetShadowType(data);
+            light.lightmapBakeType = GetLightMode(data);
+        }
+
+        private UnityEngine.LightType GetLightType(UnityLight uLight)
+        {
+            switch (uLight.LightType)
+            {
+                case Sturfee.DigitalTwin.HD.LightType.Directional:
+                    return UnityEngine.LightType.Directional;
+                case Sturfee.DigitalTwin.HD.LightType.Spot:
+                    return UnityEngine.LightType.Spot;
+                case Sturfee.DigitalTwin.HD.LightType.Point:
+                    return UnityEngine.LightType.Point;
+
+                default:
+                    return UnityEngine.LightType.Point;
+            }
+        }
+
+        private UnityEngine.LightShadows GetShadowType(UnityLight uLight)
+        {
+            switch (uLight.ShadowType)
+            {
+                case Sturfee.DigitalTwin.HD.ShadowType.NoShadows:
+                    return UnityEngine.LightShadows.None;
+                case Sturfee.DigitalTwin.HD.ShadowType.HardSadows:
+                    return UnityEngine.LightShadows.Hard;
+                case Sturfee.DigitalTwin.HD.ShadowType.SoftShadows:
+                    return UnityEngine.LightShadows.Soft;
+
+                default:
+                    return UnityEngine.LightShadows.None;
+            }
+        }
+
+        private UnityEngine.LightmapBakeType GetLightMode(UnityLight uLight)
+        {
+            switch (uLight.LightMode)
+            {
+                case Sturfee.DigitalTwin.HD.LightMode.RealTime:
+                    return UnityEngine.LightmapBakeType.Realtime;
+                case Sturfee.DigitalTwin.HD.LightMode.Baked:
+                    return UnityEngine.LightmapBakeType.Baked;
+                case Sturfee.DigitalTwin.HD.LightMode.Mixed:
+                    return UnityEngine.LightmapBakeType.Mixed;
+
+                default:
+                    return UnityEngine.LightmapBakeType.Realtime;
+            }
+        }
+
     }
 }
