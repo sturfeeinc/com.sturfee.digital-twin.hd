@@ -313,7 +313,7 @@ namespace Sturfee.DigitalTwin.HD
             light.color = new Color(data.ColorR, data.ColorG, data.ColorB);
             light.intensity = data.Intensity;
             light.shadows = GetShadowType(data);
-            light.lightmapBakeType = GetLightMode(data);
+            // light.lightmapBakeType = GetLightMode(data); // editor only
         }
 
         private UnityEngine.LightType GetLightType(UnityLight uLight)
