@@ -198,6 +198,7 @@ namespace Sturfee.DigitalTwin.HD
         public float ColorB;
 
         public float Intensity;
+        public float ShadowStrength;
         public ShadowType ShadowType;
         public LightMode LightMode;
 
