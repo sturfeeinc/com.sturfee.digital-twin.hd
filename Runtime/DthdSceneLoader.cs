@@ -192,6 +192,14 @@ namespace Sturfee.DigitalTwin.HD
                 {
                     mr.material.SetFloat("_Metallic", 0);
                 }
+                if (mr.material.name.ToLower().Contains("mirror"))
+                {
+                    mr.material.SetFloat("_Metallic", 0.9f);
+                }
+                if (mr.material.name.ToLower().Contains("metal"))
+                {
+                    mr.material.SetFloat("_Metallic", 0.8f);
+                }
 
                 //if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
                 //{
