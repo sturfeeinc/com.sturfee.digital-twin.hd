@@ -313,6 +313,7 @@ namespace Sturfee.DigitalTwin.HD
             light.color = new Color(data.ColorR, data.ColorG, data.ColorB);
             light.intensity = data.Intensity;
             light.shadows = GetShadowType(data);
+            light.shadowStrength = data.ShadowStrength;
             // light.lightmapBakeType = GetLightMode(data); // editor only
         }
 
