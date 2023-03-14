@@ -30,7 +30,7 @@ namespace Sturfee.DigitalTwin.HD
         private Dictionary<string, GameObject> LoadedAssets;
 
 
-        public async Task LoadDtHdAsync(string dthdId)
+        public async Task<GameObject> LoadDtHdAsync(string dthdId)
         {
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
             var dataFilePath = Path.Combine(baseFolder, "data.json");
@@ -38,9 +38,9 @@ namespace Sturfee.DigitalTwin.HD
             if (File.Exists(dataFilePath))
             {
                 var dataJson = File.ReadAllText(dataFilePath);
-                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: No DT HD data found in file for {dthdId}"); return; }
+                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: No DT HD data found in file for {dthdId}"); return null; }
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
-                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return; }
+                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return null; }
 
                 if (layoutData.EnhancedMesh != null)
                 {
@@ -71,9 +71,11 @@ namespace Sturfee.DigitalTwin.HD
                 // TODO: we should go download this data and still load everything...
                 Debug.LogError($"Error :: No local DT HD data file for {dthdId}");
             }
+
+            return _parent;
         }
 
-        public async Task LoadScanMeshAsync(string dthdId, string scanMeshId = null)
+        public async Task<GameObject> LoadScanMeshAsync(string dthdId, string scanMeshId = null)
         {
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
             var dataFilePath = Path.Combine(baseFolder, "data.json");
@@ -81,9 +83,9 @@ namespace Sturfee.DigitalTwin.HD
             if (File.Exists(dataFilePath))
             {
                 var dataJson = File.ReadAllText(dataFilePath);
-                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: No DT HD data found in file for {dthdId}"); return; }
+                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: No DT HD data found in file for {dthdId}"); return null; }
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
-                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return; }
+                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return null; }
 
                 if (layoutData.ScanMeshes == null) { throw CreateException(DtHdErrorCode.NO_MESH_DATA, "No meshes to load"); }
                 if (!layoutData.ScanMeshes.Any()) { throw CreateException(DtHdErrorCode.NO_MESH_DATA, "No meshes to load"); }
@@ -111,6 +113,8 @@ namespace Sturfee.DigitalTwin.HD
                 // TODO: we should go download this data and still load everything...
                 Debug.LogError($"Error :: No local DT HD data file for {dthdId}");
             }
+
+            return _parent;
         }
 
         private async Task _LoadDtHdAsync(string dthdId, DtHdLayout layoutData)

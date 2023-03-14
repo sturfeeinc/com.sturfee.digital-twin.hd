@@ -15,6 +15,8 @@ namespace Sturfee.DigitalTwin.HD
     public interface IDtHdProvider
     {
         bool IsCached(string dthdId);
+        bool AreAllScansCached(string dthdId);
+        bool IsScanCached(string dthdId, string scanId);
         Task<DtHdLayout> DownloadDtHd(string dthdId);
         Task DownloadAllScanMeshes(string dthdId);
         Task DownloadScanMesh(string dthdId, string scanId);
@@ -36,7 +38,7 @@ namespace Sturfee.DigitalTwin.HD
             // TODO: should set up some cache expiration strategy...
 
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
-            if(Directory.Exists(baseFolder))
+            if (Directory.Exists(baseFolder))
             {
                 var files = Directory.GetFiles(baseFolder);
                 if (files.Length > 0)
@@ -48,6 +50,54 @@ namespace Sturfee.DigitalTwin.HD
             return false;
         }
 
+        public bool IsScanCached(string dthdId, string scanId)
+        {
+            // TODO: should set up some cache expiration strategy...
+
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            var scanMeshesFolder = Path.Combine(baseFolder, "ScanMeshes");
+            if (Directory.Exists(scanMeshesFolder))
+            {
+                if (File.Exists(Path.Combine(scanMeshesFolder, $"{scanId}.glb")))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool AreAllScansCached(string dthdId)
+        {
+            // TODO: should set up some cache expiration strategy...
+
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+
+            var dataFilePath = Path.Combine(baseFolder, "data.json");
+            if (File.Exists(dataFilePath))
+            {
+                var dataJson = File.ReadAllText(dataFilePath);
+                var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
+
+                var scanIds = layoutData.ScanMeshes.Select(x => x.DtHdScanId);
+
+                var scanMeshesFolder = Path.Combine(baseFolder, "ScanMeshes");
+                if (Directory.Exists(scanMeshesFolder))
+                {
+                    var files = Directory.GetFiles(scanMeshesFolder);
+                    var ids = files.Select(x => Path.GetFileNameWithoutExtension(x));
+                    if (scanIds.ToHashSet().SetEquals(ids))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+
+
         public async Task<DtHdLayout> DownloadDtHd(string dthdId)
         {
             try
@@ -55,7 +105,7 @@ namespace Sturfee.DigitalTwin.HD
                 var dtHdLayout = await FetchSceneData(dthdId);
                 if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
                 await DownloadAllAssets(dthdId, dtHdLayout);
-                
+
                 // FOR DEBUG
                 // await AllScanMesh(dthdId);
                 // Debug.Log($"[DthdSceneDataProvider] :: DTHD ID: {dthdId}");
@@ -116,7 +166,7 @@ namespace Sturfee.DigitalTwin.HD
         {
             SetUpDirectories(DthdId);
             Debug.Log($"[DthdSceneDataProvider] dthd id: {DthdId}, path: {baseFolder}");
-            
+
             // if layout already exists, load the layout file
             var dataFilePath = Path.Combine(baseFolder, "data.json");
             if (File.Exists(dataFilePath))
@@ -217,7 +267,7 @@ namespace Sturfee.DigitalTwin.HD
             // save the data file
             if (!File.Exists(Path.Combine(baseFolder, "data.json")))
                 File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(layoutData));
-            
+
             // download target scan mesh
             var fileUrl = layoutData.ScanMeshes.FirstOrDefault(a => a.DtHdScanId == ScanId).ScanMeshUrl;
             await DownloadFile(fileUrl, $"{scanMeshFolder}/{ScanId}.glb");
