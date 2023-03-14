@@ -176,15 +176,17 @@ namespace Sturfee.DigitalTwin.HD
     [Serializable]
     public class UnityReflectionProbe
     {
-        public Guid ReflectionProbeId;
-        public Guid? DtHdId;
-        public Guid UserId;
+        public string ReflectionProbeId;
+        public string DtHdId;
+        public string UserId;
 
         public string Name;
         public int Importance;
         public float Intensity;
         public bool BoxProjection;
-        public float BoxSize;
+        public float BoxSizeX;
+        public float BoxSizeY;
+        public float BoxSizeZ;
         public ReflectionProbeType Type;
         public DateTime CreatedDate;
         public DateTime UpdatedDate;
@@ -222,9 +224,9 @@ namespace Sturfee.DigitalTwin.HD
     [Serializable]
     public class UnityLight
     {
-        public Guid LightId;
-        public Guid? DtHdId;
-        public Guid UserId;
+        public string LightId;
+        public string DtHdId;
+        public string UserId;
 
         public string Name;
         public LightType LightType;
@@ -239,6 +241,7 @@ namespace Sturfee.DigitalTwin.HD
         public float ColorB;
 
         public float Intensity;
+        public float ShadowStrength;
         public ShadowType ShadowType;
         public LightMode LightMode;
 
