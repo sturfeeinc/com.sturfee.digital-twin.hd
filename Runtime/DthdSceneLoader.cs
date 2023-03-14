@@ -14,6 +14,15 @@ using UnityGLTF.Loader;
 
 namespace Sturfee.DigitalTwin.HD
 {
+
+    public enum DtHdErrorCode
+    {
+        NO_DT_HD_DATA,
+        NO_MESH_DATA,
+        DATA_NOT_DOWNLOADED,
+        LOAD_ERROR
+    }
+
     public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
     {
         private GameObject _parent;
@@ -32,22 +41,55 @@ namespace Sturfee.DigitalTwin.HD
                 if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: No DT HD data found in file for {dthdId}"); return; }
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
                 if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return; }
-                
+
                 if (layoutData.EnhancedMesh != null)
                 {
                     await _LoadDtHdAsync(dthdId, layoutData);
                 }
-                // else if (layoutData.ScanMeshes != null)
-                // {
-                //     await _LoadAllScanMeshes(dthdId, layoutData);
-                // }
                 else
                 {
-                    throw new Exception("no mesh to load");
+                    throw CreateException(DtHdErrorCode.LOAD_ERROR, "Error loading layout mesh");
                 }
 
-                // FOR DEBUG
-                // await _LoadAllScanMeshes(dthdId, layoutData);
+                _parent.transform.Rotate(-90, 0, 180);
+            }
+            else
+            {
+                // TODO: we should go download this data and still load everything...
+                Debug.LogError($"Error :: No local DT HD data file for {dthdId}");
+            }
+        }
+
+        public async Task LoadScanMeshAsync(string dthdId, string scanMeshId = null)
+        {
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            var dataFilePath = Path.Combine(baseFolder, "data.json");
+
+            if (File.Exists(dataFilePath))
+            {
+                var dataJson = File.ReadAllText(dataFilePath);
+                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: No DT HD data found in file for {dthdId}"); return; }
+                var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
+                if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return; }
+
+                if (layoutData.ScanMeshes == null) { throw CreateException(DtHdErrorCode.NO_MESH_DATA, "No meshes to load"); }
+                if (!layoutData.ScanMeshes.Any()) { throw CreateException(DtHdErrorCode.NO_MESH_DATA, "No meshes to load"); }
+
+                var scanMeshesToLoad = layoutData.ScanMeshes;
+                if (!string.IsNullOrEmpty(scanMeshId))
+                {
+                    var scanMesh = layoutData.ScanMeshes.FirstOrDefault(x => x.DtHdScanId == scanMeshId);
+                    if (scanMesh != null) { scanMeshesToLoad = new List<ScanMesh> { scanMesh }; }
+                }
+
+                if (scanMeshesToLoad.Any())
+                {
+                    await _LoadScanMeshes(dthdId, scanMeshesToLoad);
+                }
+                else
+                {
+                    throw CreateException(DtHdErrorCode.NO_MESH_DATA, "No meshes to load");
+                }
 
                 _parent.transform.Rotate(-90, 0, 180);
             }
@@ -93,29 +135,26 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
-        private async Task _LoadAllScanMeshes(string dthdId, DtHdLayout layoutData)
+        private async Task _LoadScanMeshes(string dthdId, List<ScanMesh> scanMeshes)
         {
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
             var scanMeshFolder = Path.Combine(baseFolder, "ScanMeshes");
-            if (!Directory.Exists(scanMeshFolder)) { throw new Exception("Assets not downloaded!"); }
-
-            // assuming parent container is already initialized
-            // load all scan meshes
-            foreach (var scanmesh in layoutData.ScanMeshes)
+            if (!Directory.Exists(scanMeshFolder))
             {
-                await ImportDtMesh($"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb", scanmesh, "DtHdScanMesh", _parent);
+                throw CreateException(DtHdErrorCode.DATA_NOT_DOWNLOADED, "Scan meshes not downloaded!");
             }
-        }
 
-        private async Task _LoadScanMesh(string dthdId, string ScanId, DtHdLayout layoutData)
-        {
-            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
-            var scanMeshFolder = Path.Combine(baseFolder, "ScanMeshes");
-            if (!Directory.Exists(scanMeshFolder)) { throw new Exception("Assets not downloaded!"); }
+            _parent = new GameObject($"DTHDScene_{dthdId}");
+            _parent.transform.position = Vector3.zero;
 
-            // assuming parent container is already initialized
-            // load scan mesh by scan id
-            await ImportDtMesh($"{scanMeshFolder}/{ScanId}.glb", layoutData.ScanMeshes.FirstOrDefault(a => a.DtHdScanId == ScanId), "DtHdScanMesh", _parent);
+            // load all scan meshes
+            foreach (var scanmesh in scanMeshes)
+            {
+                if (!string.IsNullOrEmpty(scanmesh.ScanMeshUrl))
+                {
+                    await ImportDtMesh($"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb", scanmesh, "DtHdScanMesh", _parent);
+                }
+            }
         }
 
         private async Task ImportDtMesh(string filePath, object data, string dataType, GameObject parent)
@@ -225,8 +264,10 @@ namespace Sturfee.DigitalTwin.HD
                     var scanMeshData = data as ScanMesh;
 
                     result.transform.position = Converters.GeoToUnityPosition(scanMeshData.ScanLocation);
+                    //Debug.Log("POSFADSFFF");
+
                     // FOR TEST SCAN MESH
-                    result.transform.Rotate(-90, 0, 180);
+                    //result.transform.Rotate(-90, 0, 180);
                 }
             }
             catch (Exception e)
@@ -236,6 +277,7 @@ namespace Sturfee.DigitalTwin.HD
 
             foreach (MeshRenderer mr in result.transform.GetComponentsInChildren<MeshRenderer>())
             {
+                Debug.Log($"MR HYDE: {mr}");
                 // force white base color and non-metallic
                 if (mr.material.mainTexture != null)
                 {
@@ -264,7 +306,7 @@ namespace Sturfee.DigitalTwin.HD
                 }
             }
         }
-    
+
         private void LoadAssetItems(List<DtHdAsset> assets)
         {
             foreach (var asset in assets)
@@ -329,6 +371,13 @@ namespace Sturfee.DigitalTwin.HD
 
             reflectionProbe.RenderProbe();
         }
-    
+
+
+        private Exception CreateException(DtHdErrorCode statusCode, string statusMessage)
+        {
+            var ex = new Exception(string.Format("{0} - {1}", statusMessage, statusCode));
+            ex.Data.Add(statusCode, statusMessage);  // store "3" and "Invalid Parameters"
+            return ex;
+        }
     }
 }

@@ -16,6 +16,8 @@ namespace Sturfee.DigitalTwin.HD
     {
         bool IsCached(string dthdId);
         Task<DtHdLayout> DownloadDtHd(string dthdId);
+        Task DownloadAllScanMeshes(string dthdId);
+        Task DownloadScanMesh(string dthdId, string scanId);
         void DeleteCachedData(string dthdId);
     }
 
@@ -67,7 +69,7 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
-        public async Task AllScanMesh(string dthdId)
+        public async Task DownloadAllScanMeshes(string dthdId)
         {
             try
             {
@@ -84,7 +86,7 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
-        public async Task ScanMeshById(string dthdId, string scanId)
+        public async Task DownloadScanMesh(string dthdId, string scanId)
         {
             try
             {
