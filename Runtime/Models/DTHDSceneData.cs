@@ -99,7 +99,7 @@ namespace Sturfee.DigitalTwin.HD
         public double RefZ;
         public int Floor;
         public string ScanMeshUrl;
-        public VpsHdSite VpsHdSite;
+        // public VpsHdSite VpsHdSite;
 
     }
 
