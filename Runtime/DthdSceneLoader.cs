@@ -52,6 +52,19 @@ namespace Sturfee.DigitalTwin.HD
                 }
 
                 _parent.transform.Rotate(-90, 0, 180);
+
+                // load the environment (reflection probes, lighting, etc)
+                if (File.Exists($"{baseFolder}/environment.json"))
+                {
+                    await LoadLightingAndReflections($"{baseFolder}/environment.json");
+                }
+                else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                {
+                    await LoadLightingAndReflections($"{baseFolder}/dt_environment.json");
+                }
+
+                // set the position
+                Enhanced.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
             }
             else
             {
@@ -92,19 +105,6 @@ namespace Sturfee.DigitalTwin.HD
                 }
 
                 _parent.transform.Rotate(-90, 0, 180);
-
-                // load the environment (reflection probes, lighting, etc)
-                if (File.Exists($"{baseFolder}/environment.json"))
-                {
-                    await LoadLightingAndReflections($"{baseFolder}/environment.json");
-                }
-                else if (File.Exists($"{baseFolder}/dt_environment.json"))
-                {
-                    await LoadLightingAndReflections($"{baseFolder}/dt_environment.json");
-                }
-
-                // set the position
-                Enhanced.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
             }
             else
             {
@@ -151,7 +151,7 @@ namespace Sturfee.DigitalTwin.HD
                 throw CreateException(DtHdErrorCode.DATA_NOT_DOWNLOADED, "Scan meshes not downloaded!");
             }
 
-            _parent = new GameObject($"DTHDScene_{dthdId}");
+            _parent = new GameObject($"DTHDScans_{scanMeshes.Count}_{dthdId}");
             _parent.transform.position = Vector3.zero;
 
             // load all scan meshes
