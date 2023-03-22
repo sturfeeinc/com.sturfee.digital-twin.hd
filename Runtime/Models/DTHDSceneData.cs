@@ -92,7 +92,7 @@ namespace Sturfee.DigitalTwin.HD
         public string SiteName;
         public string Thumbnail;
         public DateTime CreatedDate;
-        public DateTime UpdatedDate;
+        public DateTime? UpdatedDate;
         public GeoLocation ScanLocation;
         public double RefX;
         public double RefY;

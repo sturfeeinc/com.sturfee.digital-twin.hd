@@ -79,7 +79,7 @@ namespace Sturfee.DigitalTwin.HD
                 var dataJson = File.ReadAllText(dataFilePath);
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
 
-                var scanIds = layoutData.ScanMeshes.Select(x => x.DtHdScanId);
+                var scanIds = layoutData.ScanMeshes.Where(x => !string.IsNullOrEmpty(x.ScanMeshUrl)).Select(x => x.DtHdScanId);
 
                 var scanMeshesFolder = Path.Combine(baseFolder, "ScanMeshes");
                 if (Directory.Exists(scanMeshesFolder))
