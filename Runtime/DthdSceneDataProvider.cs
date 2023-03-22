@@ -292,10 +292,7 @@ namespace Sturfee.DigitalTwin.HD
         {
             try
             {
-                if (File.Exists($"{file}")) throw new Exception($"File already downloaded ({file})");
-
                 var uwr = new UnityWebRequest(url);
-
                 uwr.method = UnityWebRequest.kHttpVerbGET;
                 var dh = new DownloadHandlerFile($"{file}");
                 dh.removeFileOnAbort = true;
