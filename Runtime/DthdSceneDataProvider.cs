@@ -21,6 +21,11 @@ namespace Sturfee.DigitalTwin.HD
         Task DownloadAllScanMeshes(string dthdId);
         Task DownloadScanMesh(string dthdId, string scanId);
         void DeleteCachedData(string dthdId);
+
+        Task<bool> IsEnchanceMeshCachedAsync(string dthdId);
+        Task<bool> AreAllScansCachedAsync(string dthdId);
+
+        Task RefreshCacheInfoAsync(string dtHdId);
     }
 
     public class DthdSceneDataProvider : IDtHdProvider
@@ -31,6 +36,14 @@ namespace Sturfee.DigitalTwin.HD
         {
             ServicePointManager.DefaultConnectionLimit = 1000;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        }
+
+        public async Task RefreshCacheInfoAsync(string dtHdId)
+        {
+            var dtHdLayout = await FetchSceneData(dtHdId, true);
+            if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dtHdId);
+            File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(dtHdLayout));
         }
 
         public bool IsCached(string dthdId)
@@ -45,6 +58,23 @@ namespace Sturfee.DigitalTwin.HD
                 {
                     return true;
                 }
+            }
+
+            return false;
+        }
+
+        public async Task<bool> IsEnchanceMeshCachedAsync(string dthdId)
+        {
+            // this checks against the server
+            var dtHdLayout = await FetchSceneData(dthdId);
+            if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+
+            if (string.IsNullOrEmpty(dtHdLayout.EnhancedMesh)) { return true; }
+
+            var filePath = Path.Combine(Application.persistentDataPath, "DTHD", dthdId, "Enhanced", "Enhanced.glb");
+            if (File.Exists(filePath))
+            {
+                return true;
             }
 
             return false;
@@ -69,6 +99,7 @@ namespace Sturfee.DigitalTwin.HD
 
         public bool AreAllScansCached(string dthdId)
         {
+            // this only checks local files
             // TODO: should set up some cache expiration strategy...
 
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
@@ -96,6 +127,28 @@ namespace Sturfee.DigitalTwin.HD
             return false;
         }
 
+        public async Task<bool> AreAllScansCachedAsync(string dthdId)
+        {
+            // this checks against the server
+            var dtHdLayout = await FetchSceneData(dthdId);
+            if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+
+            var scanIds = dtHdLayout.ScanMeshes.Where(x => !string.IsNullOrEmpty(x.ScanMeshUrl)).Select(x => x.DtHdScanId);
+
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            var scanMeshesFolder = Path.Combine(baseFolder, "ScanMeshes");
+            if (Directory.Exists(scanMeshesFolder))
+            {
+                var files = Directory.GetFiles(scanMeshesFolder);
+                var ids = files.Select(x => Path.GetFileNameWithoutExtension(x));
+                if (scanIds.ToHashSet().SetEquals(ids))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
 
         public async Task<DtHdLayout> DownloadDtHd(string dthdId)
@@ -162,14 +215,14 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
-        private async Task<DtHdLayout> FetchSceneData(string DthdId)
+        private async Task<DtHdLayout> FetchSceneData(string DthdId, bool forceRefresh = false)
         {
             SetUpDirectories(DthdId);
             Debug.Log($"[DthdSceneDataProvider] dthd id: {DthdId}, path: {baseFolder}");
 
             // if layout already exists, load the layout file
             var dataFilePath = Path.Combine(baseFolder, "data.json");
-            if (File.Exists(dataFilePath))
+            if (File.Exists(dataFilePath) && !forceRefresh)
             {
                 var dataJson = File.ReadAllText(dataFilePath);
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
