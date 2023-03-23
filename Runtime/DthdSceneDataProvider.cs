@@ -308,7 +308,10 @@ namespace Sturfee.DigitalTwin.HD
             {
                 foreach (var scanmesh in layoutData.ScanMeshes)
                 {
-                    downloadTasks.Add(DownloadFile(scanmesh.ScanMeshUrl, $"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb"));
+                    if (scanmesh.Status != "ARCHIVED")
+                    {
+                        downloadTasks.Add(DownloadFile(scanmesh.ScanMeshUrl, $"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb"));
+                    }
                 }
             }
 

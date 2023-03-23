@@ -161,7 +161,7 @@ namespace Sturfee.DigitalTwin.HD
             // load all scan meshes
             foreach (var scanmesh in scanMeshes)
             {
-                if (!string.IsNullOrEmpty(scanmesh.ScanMeshUrl))
+                if (!string.IsNullOrEmpty(scanmesh.ScanMeshUrl) && scanmesh.Status != "ARCHIVED")
                 {
                     await ImportDtMesh($"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb", scanmesh, "DtHdScanMesh", _parent);
                 }
