@@ -1,6 +1,8 @@
 using Newtonsoft.Json;
 using Sturfee.XRCS.Utils;
 using SturfeeVPS.Core;
+using SturfeeVPS.Core.Models;
+using SturfeeVPS.Core.Constants;
 using SturfeeVPS.SDK;
 using System;
 using System.Collections.Generic;
@@ -14,7 +16,9 @@ using UnityGLTF.Loader;
 
 namespace Sturfee.DigitalTwin.HD
 {
-
+    /// <summary>
+    /// API error codes
+    /// </summary>
     public enum DtHdErrorCode
     {
         NO_DT_HD_DATA,
@@ -23,13 +27,21 @@ namespace Sturfee.DigitalTwin.HD
         LOAD_ERROR
     }
 
+
+    /// <summary>
+    /// A loader for DTHD Scenes in the form of scene-change persistent singleton. Contains methods for loading DTHD Scene and ScanMesh asynchronously.
+    /// </summary>
     public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
     {
         private GameObject _parent;
         private GameObject Enhanced;
         private Dictionary<string, GameObject> LoadedAssets;
 
-
+        /// <summary>
+        /// Loads DTHD scene including enhanced building mesh (artist generated), reflection probes and related assets.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <returns>Parent transform of instantiated scene</returns>
         public async Task<GameObject> LoadDtHdAsync(string dthdId)
         {
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
@@ -75,6 +87,12 @@ namespace Sturfee.DigitalTwin.HD
             return _parent;
         }
 
+        /// <summary>
+        /// Loads scan mesh for associated DTHD ID
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <param name="scanMeshId">Scan mesh ID</param>
+        /// <returns>Parent transform of the instantiated scan mesh</returns>
         public async Task<GameObject> LoadScanMeshAsync(string dthdId, string scanMeshId = null)
         {
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
@@ -421,51 +439,51 @@ namespace Sturfee.DigitalTwin.HD
             // light.lightmapBakeType = GetLightMode(data); // editor only
         }
 
-        private UnityEngine.LightType GetLightType(UnityLight uLight)
+        private LightType GetLightType(UnityLight uLight)
         {
             switch (uLight.LightType)
             {
-                case Sturfee.DigitalTwin.HD.LightType.Directional:
-                    return UnityEngine.LightType.Directional;
-                case Sturfee.DigitalTwin.HD.LightType.Spot:
-                    return UnityEngine.LightType.Spot;
-                case Sturfee.DigitalTwin.HD.LightType.Point:
-                    return UnityEngine.LightType.Point;
+                case SturfeeLightType.Directional:
+                    return LightType.Directional;
+                case SturfeeLightType.Spot:
+                    return LightType.Spot;
+                case SturfeeLightType.Point:
+                    return LightType.Point;
 
                 default:
-                    return UnityEngine.LightType.Point;
+                    return LightType.Point;
             }
         }
 
-        private UnityEngine.LightShadows GetShadowType(UnityLight uLight)
+        private LightShadows GetShadowType(UnityLight uLight)
         {
             switch (uLight.ShadowType)
             {
-                case Sturfee.DigitalTwin.HD.ShadowType.NoShadows:
-                    return UnityEngine.LightShadows.None;
-                case Sturfee.DigitalTwin.HD.ShadowType.HardSadows:
-                    return UnityEngine.LightShadows.Hard;
-                case Sturfee.DigitalTwin.HD.ShadowType.SoftShadows:
-                    return UnityEngine.LightShadows.Soft;
+                case ShadowType.NoShadows:
+                    return LightShadows.None;
+                case ShadowType.HardSadows:
+                    return LightShadows.Hard;
+                case ShadowType.SoftShadows:
+                    return LightShadows.Soft;
 
                 default:
-                    return UnityEngine.LightShadows.None;
+                    return LightShadows.None;
             }
         }
 
-        private UnityEngine.LightmapBakeType GetLightMode(UnityLight uLight)
+        private LightmapBakeType GetLightMode(UnityLight uLight)
         {
             switch (uLight.LightMode)
             {
-                case Sturfee.DigitalTwin.HD.LightMode.RealTime:
-                    return UnityEngine.LightmapBakeType.Realtime;
-                case Sturfee.DigitalTwin.HD.LightMode.Baked:
-                    return UnityEngine.LightmapBakeType.Baked;
-                case Sturfee.DigitalTwin.HD.LightMode.Mixed:
-                    return UnityEngine.LightmapBakeType.Mixed;
+                case LightMode.RealTime:
+                    return LightmapBakeType.Realtime;
+                case LightMode.Baked:
+                    return LightmapBakeType.Baked;
+                case LightMode.Mixed:
+                    return LightmapBakeType.Mixed;
 
                 default:
-                    return UnityEngine.LightmapBakeType.Realtime;
+                    return LightmapBakeType.Realtime;
             }
         }
 
