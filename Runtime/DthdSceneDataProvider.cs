@@ -1,5 +1,7 @@
 using Newtonsoft.Json;
 using SturfeeVPS.Core;
+using SturfeeVPS.Core.Models;
+using SturfeeVPS.Core.Constants;
 using System;
 using System.Net;
 using System.Collections.Generic;
@@ -12,6 +14,9 @@ using UnityEngine.Networking;
 
 namespace Sturfee.DigitalTwin.HD
 {
+    /// <summary>
+    /// Interface for DTHD scene data providers
+    /// </summary>
     public interface IDtHdProvider
     {
         bool IsCached(string dthdId);
@@ -28,6 +33,9 @@ namespace Sturfee.DigitalTwin.HD
         Task RefreshCacheInfoAsync(string dtHdId);
     }
 
+    /// <summary>
+    /// Provides methods for obtaining non-meta scene data in ".glb" format. Contains other helper functions.
+    /// </summary>
     public class DthdSceneDataProvider : IDtHdProvider
     {
         // Directories
@@ -38,6 +46,10 @@ namespace Sturfee.DigitalTwin.HD
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
 
+        /// <summary>
+        /// Downloads DTHD scene data even if it exists in local cache.
+        /// </summary>
+        /// <param name="dtHdId">DTHD ID</param>
         public async Task RefreshCacheInfoAsync(string dtHdId)
         {
             var dtHdLayout = await FetchSceneData(dtHdId, true);
@@ -46,6 +58,11 @@ namespace Sturfee.DigitalTwin.HD
             File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(dtHdLayout));
         }
 
+        /// <summary>
+        /// Checks if DTHD data is cached
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <returns>boolean response</returns>
         public bool IsCached(string dthdId)
         {
             // TODO: should set up some cache expiration strategy...
@@ -63,6 +80,11 @@ namespace Sturfee.DigitalTwin.HD
             return false;
         }
 
+        /// <summary>
+        /// Checks if enhanced building mesh for associated DTHD ID is locally cached.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <returns>boolean response</returns>
         public async Task<bool> IsEnchanceMeshCachedAsync(string dthdId)
         {
             // this checks against the server
@@ -80,6 +102,12 @@ namespace Sturfee.DigitalTwin.HD
             return false;
         }
 
+        /// <summary>
+        /// Checks if a scan mesh for associated DTHD ID is locally cached.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <param name="scanId">Scan mesh ID</param>
+        /// <returns>boolean response</returns>
         public bool IsScanCached(string dthdId, string scanId)
         {
             // TODO: should set up some cache expiration strategy...
@@ -97,6 +125,11 @@ namespace Sturfee.DigitalTwin.HD
             return false;
         }
 
+        /// <summary>
+        /// Checks if all associated scan meshes are locally cached.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <returns>boolean response</returns>
         public bool AreAllScansCached(string dthdId)
         {
             // this only checks local files
@@ -127,6 +160,11 @@ namespace Sturfee.DigitalTwin.HD
             return false;
         }
 
+        /// <summary>
+        /// Asynchronously checks if all associated scan meshes are locally cached.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <returns>boolean response</returns>
         public async Task<bool> AreAllScansCachedAsync(string dthdId)
         {
             // this checks against the server
@@ -150,7 +188,11 @@ namespace Sturfee.DigitalTwin.HD
             return false;
         }
 
-
+        /// <summary>
+        /// Downloader for enhanced building mesh and associated assets
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <returns>DTHD layout (scene data)</returns>
         public async Task<DtHdLayout> DownloadDtHd(string dthdId)
         {
             try
@@ -172,6 +214,10 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
+        /// <summary>
+        /// Downloader for all scan meshes associated with a DTHD ID
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
         public async Task DownloadAllScanMeshes(string dthdId)
         {
             try
@@ -189,6 +235,11 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
+        /// <summary>
+        /// Downloader for a single scan mesh
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <param name="scanId">Scan mesh ID</param>
         public async Task DownloadScanMesh(string dthdId, string scanId)
         {
             try
@@ -206,6 +257,10 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
+        /// <summary>
+        /// Deletes entire cached DTHD data.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
         public void DeleteCachedData(string dthdId)
         {
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
@@ -230,7 +285,7 @@ namespace Sturfee.DigitalTwin.HD
             }
 
             // get download URL
-            string url = DTHDConstants.DTHD_API + "/" + DthdId + "?full_details=true";
+            string url = DtConstants.DTHD_LAYOUT + "/" + DthdId + "?full_details=true";
 
             SturfeeDebug.Log($"Fetching HD DT => {url}");
 
