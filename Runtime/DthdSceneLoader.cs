@@ -11,8 +11,10 @@ using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using System.Linq;
 using UnityEngine;
-using UnityGLTF;
-using UnityGLTF.Loader;
+//using UnityGLTF;
+//using UnityGLTF.Loader;
+using GLTFast;
+using CesiumForUnity;
 
 namespace Sturfee.DigitalTwin.HD
 {
@@ -31,7 +33,7 @@ namespace Sturfee.DigitalTwin.HD
     /// <summary>
     /// A loader for DTHD Scenes in the form of scene-change persistent singleton. Contains methods for loading DTHD Scene and ScanMesh asynchronously.
     /// </summary>
-    public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
+        public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
     {
         private GameObject _parent;
         private GameObject Enhanced;
@@ -54,29 +56,48 @@ namespace Sturfee.DigitalTwin.HD
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
                 if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return null; }
 
-                if (layoutData.EnhancedMesh != null)
+                if (!string.IsNullOrEmpty(layoutData.CesiumAssetId))
                 {
-                    await _LoadDtHdAsync(dthdId, layoutData);
+                    Debug.Log($"[STURFEE] :: Using Cesium ({layoutData.CesiumAssetId})");
+                    _parent = new GameObject($"DTHDScene_{dthdId}");
+                    _parent.transform.position = Vector3.zero;
+
+                    var cesiumGeo = _parent.AddComponent<CesiumGeoreference>();
+                    cesiumGeo.latitude = layoutData.Location.Latitude;
+                    cesiumGeo.longitude = layoutData.Location.Longitude;
+                    cesiumGeo.height = layoutData.Location.Altitude;
+
+                    var asset = new GameObject("CesiumAsset");
+                    asset.transform.parent = transform;
+                    var cesiumAsset = asset.AddComponent<Cesium3DTileset>();
+                    cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
                 }
                 else
                 {
-                    throw CreateException(DtHdErrorCode.LOAD_ERROR, "Error loading layout mesh");
-                }
+                    if (layoutData.EnhancedMesh != null)
+                    {
+                        await _LoadDtHdAsync(dthdId, layoutData);
+                    }
+                    else
+                    {
+                        throw CreateException(DtHdErrorCode.LOAD_ERROR, "Error loading layout mesh");
+                    }
 
-                _parent.transform.Rotate(-90, 0, 180);
+                    _parent.transform.Rotate(-90, 0, 180);
 
-                // load the environment (reflection probes, lighting, etc)
-                if (File.Exists($"{baseFolder}/environment.json"))
-                {
-                    await LoadLightingAndReflections($"{baseFolder}/environment.json");
-                }
-                else if (File.Exists($"{baseFolder}/dt_environment.json"))
-                {
-                    await LoadLightingAndReflections($"{baseFolder}/dt_environment.json");
-                }
+                    // load the environment (reflection probes, lighting, etc)
+                    if (File.Exists($"{baseFolder}/environment.json"))
+                    {
+                        await LoadLightingAndReflections($"{baseFolder}/environment.json");
+                    }
+                    else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                    {
+                        await LoadLightingAndReflections($"{baseFolder}/dt_environment.json");
+                    }
 
-                // set the position
-                Enhanced.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
+                    // set the position
+                    Enhanced.transform.position = Converters.GeoToUnityPosition(layoutData.Location);
+                }
             }
             else
             {
@@ -188,23 +209,39 @@ namespace Sturfee.DigitalTwin.HD
 
         private async Task ImportDtMesh(string filePath, object data, string dataType, GameObject parent)
         {
-            var _importOptions = new ImportOptions
-            {
-                DataLoader = new FileLoader(Path.GetDirectoryName(filePath)),
-                AsyncCoroutineHelper = _parent.AddComponent<AsyncCoroutineHelper>(),
-            };
+            //var _importOptions = new ImportOptions
+            //{
+            //    DataLoader = new FileLoader(Path.GetDirectoryName(filePath)),
+            //    AsyncCoroutineHelper = _parent.AddComponent<AsyncCoroutineHelper>(),
+            //};
 
             Debug.Log($"DtHdSceneLoader :: Khronos :: Loading file = {filePath}");
 
             try
             {
-                var _importer = new GLTFSceneImporter(filePath, _importOptions);
+                //var _importer = new GLTFSceneImporter(filePath, _importOptions);
 
-                _importer.Collider = GLTFSceneImporter.ColliderType.Mesh;
-                _importer.SceneParent = parent.transform;
+                //_importer.Collider = GLTFSceneImporter.ColliderType.Mesh;
+                //_importer.SceneParent = parent.transform;
 
-                //await _importer.LoadSceneAsync(-1, true, (go, err) => { OnFinishAsync(data, dataType, filePath, go, err); });
-                await _importer.LoadSceneAsync(-1, true, (go, err) => { OnMeshLoaded(data, dataType, filePath, go, err); });
+                ////await _importer.LoadSceneAsync(-1, true, (go, err) => { OnFinishAsync(data, dataType, filePath, go, err); });
+                //await _importer.LoadSceneAsync(-1, true, (go, err) => { OnMeshLoaded(data, dataType, filePath, go, err); });
+
+                byte[] glbData = File.ReadAllBytes(filePath);
+                var gltf = new GltfImport();
+                bool success = await gltf.LoadGltfBinary(
+                    glbData,
+                    // The URI of the original data is important for resolving relative URIs within the glTF
+                    new Uri(filePath)
+                    );
+                if (success)
+                {
+                    var go = new GameObject($"GLTF_SCENE");
+                    go.transform.SetParent(parent.transform);
+                    success = await gltf.InstantiateMainSceneAsync(go.transform);
+                    OnMeshLoaded(data, dataType, filePath, go, null);
+                }
+
             }
             catch (Exception ex)
             {
