@@ -58,7 +58,7 @@ namespace Sturfee.DigitalTwin.HD
 
                 if (!string.IsNullOrEmpty(layoutData.CesiumAssetId))
                 {
-                    Debug.Log($"[STURFEE] :: Using Cesium ({layoutData.CesiumAssetId})");
+                    Debug.Log($"[STURFEE] :: Using Cesium ({layoutData.CesiumAssetId}) | {layoutData.Location.Latitude}, {layoutData.Location.Longitude}");
                     _parent = new GameObject($"DTHDScene_{dthdId}");
                     _parent.transform.position = Vector3.zero;
 
@@ -71,6 +71,17 @@ namespace Sturfee.DigitalTwin.HD
                     asset.transform.parent = transform;
                     var cesiumAsset = asset.AddComponent<Cesium3DTileset>();
                     cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
+
+                    // create helper for spawn points, etc
+                    var helper = asset.AddComponent<DtHdLayoutHelper>();
+                    helper.DtHdId = $"{layoutData.DtHdId}";
+                    asset.gameObject.name = $"DtHdLayout_{layoutData.DtHdId}";
+
+                    // add dummy spawnpoint
+                    helper.SpawnPoint = new GameObject($"DtHdSpawnPoint");
+                    helper.SpawnPoint.transform.SetParent(asset.transform);
+                    helper.SpawnPoint.transform.localPosition = new Vector3(layoutData.SpawnPositionX, layoutData.SpawnPositionY, layoutData.SpawnPositionZ);
+                    helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
                 }
                 else
                 {
