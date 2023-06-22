@@ -368,6 +368,14 @@ namespace Sturfee.DigitalTwin.HD
                         }
                     }
                 }
+
+                if (mr.material.HasProperty("roughnessFactor"))
+                {
+                    if (!mr.material.name.ToLower().Contains("mirror"))
+                    {
+                        mr.material.SetFloat("roughnessFactor", 1);
+                    }                        
+                }
             }
         }
 
