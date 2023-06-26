@@ -70,6 +70,7 @@ namespace Sturfee.DigitalTwin.HD
                     var asset = new GameObject("CesiumAsset");
                     asset.transform.parent = transform;
                     var cesiumAsset = asset.AddComponent<Cesium3DTileset>();
+                    cesiumAsset.ionAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNzhmN2E0YS05ZmU2LTQwZDAtYTU2OS03YjlmMGZkOGYxYmUiLCJpZCI6MTI5MDg0LCJpYXQiOjE2ODczNDg0MjF9.uwHxAhuoNqSoFdIJUp5IgFA-MLtBG23WTfQKXrt6fmY";
                     cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
 
                     // create helper for spawn points, etc
