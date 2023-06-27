@@ -68,9 +68,13 @@ namespace Sturfee.DigitalTwin.HD
                     cesiumGeo.height = layoutData.Location.Altitude;
 
                     var asset = new GameObject("CesiumAsset");
-                    asset.transform.parent = transform;
+                    asset.transform.parent = _parent.transform;
                     var cesiumAsset = asset.AddComponent<Cesium3DTileset>();
                     cesiumAsset.ionAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNzhmN2E0YS05ZmU2LTQwZDAtYTU2OS03YjlmMGZkOGYxYmUiLCJpZCI6MTI5MDg0LCJpYXQiOjE2ODczNDg0MjF9.uwHxAhuoNqSoFdIJUp5IgFA-MLtBG23WTfQKXrt6fmY";
+                    cesiumAsset.maximumScreenSpaceError = 32;
+                    cesiumAsset.maximumSimultaneousTileLoads = 8;
+                    cesiumAsset.loadingDescendantLimit = 8;
+                    cesiumAsset.maximumCachedBytes = 256 * 1024 * 1024; // 256 MB
                     cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
 
                     // create helper for spawn points, etc
@@ -82,7 +86,8 @@ namespace Sturfee.DigitalTwin.HD
                     helper.SpawnPoint = new GameObject($"DtHdSpawnPoint");
                     helper.SpawnPoint.transform.SetParent(asset.transform);
                     helper.SpawnPoint.transform.localPosition = new Vector3(layoutData.SpawnPositionX, layoutData.SpawnPositionY, layoutData.SpawnPositionZ);
-                    helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
+                    //helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
+                    helper.SpawnPoint.transform.Rotate(new Vector3(0, layoutData.SpawnHeading, 0));
                 }
                 else
                 {
