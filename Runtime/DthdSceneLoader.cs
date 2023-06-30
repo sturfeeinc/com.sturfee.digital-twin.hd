@@ -33,7 +33,7 @@ namespace Sturfee.DigitalTwin.HD
     /// <summary>
     /// A loader for DTHD Scenes in the form of scene-change persistent singleton. Contains methods for loading DTHD Scene and ScanMesh asynchronously.
     /// </summary>
-        public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
+    public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
     {
         private GameObject _parent;
         private GameObject Enhanced;
@@ -88,6 +88,16 @@ namespace Sturfee.DigitalTwin.HD
                     helper.SpawnPoint.transform.localPosition = new Vector3(layoutData.SpawnPositionX, layoutData.SpawnPositionY, layoutData.SpawnPositionZ);
                     //helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
                     helper.SpawnPoint.transform.Rotate(new Vector3(0, layoutData.SpawnHeading, 0));
+
+                    // load the environment (reflection probes, lighting, etc)
+                    if (File.Exists($"{baseFolder}/environment.json"))
+                    {
+                        await LoadLightingAndReflections($"{baseFolder}/environment.json", _parent.transform, "Cesium");
+                    }
+                    else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                    {
+                        await LoadLightingAndReflections($"{baseFolder}/dt_environment.json", _parent.transform, "Cesium");
+                    }
                 }
                 else
                 {
@@ -105,11 +115,11 @@ namespace Sturfee.DigitalTwin.HD
                     // load the environment (reflection probes, lighting, etc)
                     if (File.Exists($"{baseFolder}/environment.json"))
                     {
-                        await LoadLightingAndReflections($"{baseFolder}/environment.json");
+                        await LoadLightingAndReflections($"{baseFolder}/environment.json", Enhanced.transform, "Unity");
                     }
                     else if (File.Exists($"{baseFolder}/dt_environment.json"))
                     {
-                        await LoadLightingAndReflections($"{baseFolder}/dt_environment.json");
+                        await LoadLightingAndReflections($"{baseFolder}/dt_environment.json", Enhanced.transform, "Unity");
                     }
 
                     // set the position
@@ -391,7 +401,7 @@ namespace Sturfee.DigitalTwin.HD
                     if (!mr.material.name.ToLower().Contains("mirror"))
                     {
                         mr.material.SetFloat("roughnessFactor", 1);
-                    }                        
+                    }
                 }
             }
         }
@@ -424,7 +434,7 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
-        private async Task LoadLightingAndReflections(string file)
+        private async Task LoadLightingAndReflections(string file, Transform baseParent, string type)
         {
             var envDataJson = await File.ReadAllTextAsync(file);
 
@@ -432,13 +442,26 @@ namespace Sturfee.DigitalTwin.HD
             {
                 var envData = JsonConvert.DeserializeObject<DtEnvironment>(envDataJson);
 
-                if (envData != null && envData.Unity != null)
+                if (envData != null)
                 {
+                    if (type == "Cesium" && envData.Cesium == null) { return; }
+                    if (type == "Unity" && envData.Unity == null) { return; }
+
                     var parent = new GameObject($"Lighting-and-Reflections");
-                    parent.transform.SetParent(Enhanced.transform);
+                    parent.transform.SetParent(baseParent);//Enhanced.transform);
                     parent.transform.localPosition = Vector3.zero;
 
-                    foreach (var dtReflection in envData.Unity.ReflectionProbes)
+                    UnityReflectionProbe[] reflectionProbes = new UnityReflectionProbe[] { };
+                    if (type == "Cesium")
+                    {
+                        reflectionProbes = envData.Cesium.ReflectionProbes;
+                    }
+                    if (type == "Unity")
+                    {
+                        reflectionProbes = envData.Unity.ReflectionProbes;
+                    }
+
+                    foreach (var dtReflection in reflectionProbes)
                     {
                         try
                         {
@@ -450,7 +473,17 @@ namespace Sturfee.DigitalTwin.HD
                         }
                     }
 
-                    foreach (var light in envData.Unity.Lights)
+                    UnityLight[] lights = new UnityLight[] { };
+                    if (type == "Cesium")
+                    {
+                        lights = envData.Cesium.Lights;
+                    }
+                    if (type == "Unity")
+                    {
+                        lights = envData.Unity.Lights;
+                    }
+
+                    foreach (var light in lights)
                     {
                         try
                         {
