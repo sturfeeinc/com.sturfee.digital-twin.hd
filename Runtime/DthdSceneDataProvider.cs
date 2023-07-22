@@ -31,6 +31,8 @@ namespace Sturfee.DigitalTwin.HD
         Task<bool> AreAllScansCachedAsync(string dthdId);
 
         Task RefreshCacheInfoAsync(string dtHdId);
+        Task<DtHdLayout> GetDtHdLayout(string dtHdId, bool skipCache = false);
+        Task<ScanMesh> GetScanMesh(string dtHdId, string scanId, bool skipCache = false);
     }
 
     /// <summary>
@@ -45,6 +47,51 @@ namespace Sturfee.DigitalTwin.HD
             ServicePointManager.DefaultConnectionLimit = 1000;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
+
+        /// <summary>
+        /// Gets the DTHD Layout data from local cache, or fetches it from the server
+        /// </summary>
+        /// <param name="dtHdId">DTHD ID</param>
+        /// <param name="skipCache">Skip the cache and go to the server</param>
+        public async Task<DtHdLayout> GetDtHdLayout(string dtHdId, bool skipCache = false)
+        {
+            var dtHdLayout = await FetchSceneData(dtHdId, skipCache);
+            if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dtHdId);
+            File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(dtHdLayout));
+            return dtHdLayout;
+        }
+
+        /// <summary>
+        /// Gets the DT Scan Mesh data from local cache, or fetches it from the server
+        /// </summary>
+        /// <param name="dtHdId">DT HD ID of the layout that the scan belongs to</param>
+        /// <param name="scanId">Scan ID that you want data for</param>
+        /// <param name="skipCache">Skip the cache and go to the server</param>
+        public async Task<ScanMesh> GetScanMesh(string dtHdId, string scanId, bool skipCache = false)
+        {
+            var dtHdLayout = await FetchSceneData(dtHdId, skipCache);
+            if (dtHdLayout == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+
+            if (skipCache)
+            {
+                var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dtHdId);
+                File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(dtHdLayout));
+            }
+
+            var scanMeshData = dtHdLayout.ScanMeshes.FirstOrDefault(x => x.DtHdScanId == scanId);
+            if (scanMeshData != null)
+            {
+                return scanMeshData;
+            }
+            return null;
+
+            // var scanData = await FetchScanData(dtHdId, scanId, skipCache);
+            // if (scanData == null) { throw new ArgumentException($"Invalid DT HD ID"); }
+            // var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dtHdId);
+            // File.WriteAllText(Path.Combine(baseFolder, "data.json"), JsonConvert.SerializeObject(scanData));
+        }
+
 
         /// <summary>
         /// Downloads DTHD scene data even if it exists in local cache.
@@ -310,6 +357,62 @@ namespace Sturfee.DigitalTwin.HD
                 Debug.Log(jsonResponse);
 
                 var result = JsonConvert.DeserializeObject<DtHdLayout>(jsonResponse);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error getting metadata for DT HD with ID = {DthdId}");
+                Debug.LogError(ex);
+                throw;
+            }
+
+            return null;
+        }
+
+        private async Task<ScanMesh> FetchScanData(string DthdId, string scanId, bool forceRefresh = false)
+        {
+            SetUpDirectories(DthdId);
+            Debug.Log($"[DthdSceneDataProvider] dthd id: {DthdId}, scan id: {scanId}, path: {baseFolder}");
+
+            // if layout already exists, load the layout file
+            var dataFilePath = Path.Combine(baseFolder, "data.json");
+            if (File.Exists(dataFilePath) && !forceRefresh)
+            {
+                var dataJson = File.ReadAllText(dataFilePath);
+                var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
+                var scanMeshData = layoutData.ScanMeshes.FirstOrDefault(x => x.DtHdScanId == scanId);
+                if (scanMeshData != null)
+                {
+                    return scanMeshData;
+                }
+            }
+
+            // get download URL
+            string url = $"{DtConstants.DTHD_LAYOUT}/{DthdId}/scan/{scanId}";
+
+            SturfeeDebug.Log($"Fetching Scan Mesh data => {url}");
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.ContentType = "application/json; charset=utf-8";
+            // TODO: auth
+
+            try
+            {
+                var response = await request.GetResponseAsync() as HttpWebResponse;
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    Debug.LogError($"ERROR:: API => {response.StatusCode} - {response.StatusDescription}");
+                    Debug.LogError(response);
+                    throw new Exception(response.StatusDescription);
+                }
+
+                StreamReader reader = new StreamReader(response.GetResponseStream());
+                string jsonResponse = reader.ReadToEnd();
+
+                Debug.Log(jsonResponse);
+
+                var result = JsonConvert.DeserializeObject<ScanMesh>(jsonResponse);
                 return result;
             }
             catch (Exception ex)

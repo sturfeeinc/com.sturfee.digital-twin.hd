@@ -4,7 +4,7 @@
     "references": [
         "SturfeeVPS.SDK",
         "SturfeeVPS.Core",
-        "UnityGLTFScripts",
+        "glTFast",
         "NGeoHash",
         "Sturfee-XRCS",
         "Sturfee-XRCS-Config",

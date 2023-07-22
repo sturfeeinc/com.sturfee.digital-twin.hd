@@ -113,13 +113,21 @@ namespace Sturfee.DigitalTwin.HD
                     _parent.transform.Rotate(-90, 0, 180);
 
                     // load the environment (reflection probes, lighting, etc)
-                    if (File.Exists($"{baseFolder}/environment.json"))
+                    try
                     {
-                        await LoadLightingAndReflections($"{baseFolder}/environment.json", Enhanced.transform, "Unity");
+                        if (File.Exists($"{baseFolder}/environment.json"))
+                        {
+                            await LoadLightingAndReflections($"{baseFolder}/environment.json", Enhanced.transform, "Unity");
+                        }
+                        else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                        {
+                            await LoadLightingAndReflections($"{baseFolder}/dt_environment.json", Enhanced.transform, "Unity");
+                        }
                     }
-                    else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                    catch (Exception ex)
                     {
-                        await LoadLightingAndReflections($"{baseFolder}/dt_environment.json", Enhanced.transform, "Unity");
+                        Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: ERROR Loading Lighting data");
+                        Debug.Log(ex);
                     }
 
                     // set the position
@@ -209,7 +217,15 @@ namespace Sturfee.DigitalTwin.HD
 
             // load the asset items (instances)
             Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: Loading Asset Instances...");
-            LoadAssetItems(layoutData.Assets);
+            try
+            {
+                LoadAssetItems(layoutData.Assets);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: ERROR Loading Asset Instances");
+                Debug.Log(ex);
+            }            
         }
 
         private async Task _LoadScanMeshes(string dthdId, List<ScanMesh> scanMeshes)
@@ -360,50 +376,58 @@ namespace Sturfee.DigitalTwin.HD
 
             foreach (MeshRenderer mr in result.transform.GetComponentsInChildren<MeshRenderer>())
             {
-                Debug.Log($"MR HYDE: {mr}");
-                // force white base color and non-metallic
-                if (mr.material.mainTexture != null)
+                try
                 {
-                    mr.material.color = Color.white;
-                }
-                if (mr.material.HasProperty("_Metallic"))
-                {
-                    mr.material.SetFloat("_Metallic", 0);
-                }
-                if (mr.material.name.ToLower().Contains("mirror"))
-                {
-                    mr.material.SetFloat("_Metallic", 0.9f);
-                }
-                if (mr.material.name.ToLower().Contains("metal"))
-                {
-                    mr.material.SetFloat("_Metallic", 0.8f);
-                }
-
-                //if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
-                //{
-                //    mr.material.SetFloat("_Glossiness", 1);
-                //}
-
-                if (mr.material.HasProperty("_MetallicGlossMap")) // _MetallicGlossMap
-                {
-                    var metaalicRoughnessMap = mr.material.GetTexture("_MetallicGlossMap");
-                    if (metaalicRoughnessMap != null)
+                    // force white base color and non-metallic
+                    if (mr.material.mainTexture != null)
                     {
-                        if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
+                        mr.material.color = Color.white;
+                    }
+                    if (mr.material.HasProperty("_Metallic"))
+                    {
+                        mr.material.SetFloat("_Metallic", 0);
+                    }
+                    if (mr.material.name.ToLower().Contains("mirror"))
+                    {
+                        mr.material.SetFloat("_Metallic", 0.9f);
+                    }
+                    if (mr.material.name.ToLower().Contains("metal"))
+                    {
+                        mr.material.SetFloat("_Metallic", 0.8f);
+                    }
+
+                    //if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
+                    //{
+                    //    mr.material.SetFloat("_Glossiness", 1);
+                    //}
+
+                    if (mr.material.HasProperty("_MetallicGlossMap")) // _MetallicGlossMap
+                    {
+                        var metaalicRoughnessMap = mr.material.GetTexture("_MetallicGlossMap");
+                        if (metaalicRoughnessMap != null)
                         {
-                            mr.material.SetFloat("_Glossiness", 1);
+                            if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
+                            {
+                                mr.material.SetFloat("_Glossiness", 1);
+                            }
+                        }
+                    }
+
+                    if (mr.material.HasProperty("roughnessFactor"))
+                    {
+                        if (!mr.material.name.ToLower().Contains("mirror"))
+                        {
+                            mr.material.SetFloat("roughnessFactor", 1);
                         }
                     }
                 }
-
-                if (mr.material.HasProperty("roughnessFactor"))
+                catch (Exception ex)
                 {
-                    if (!mr.material.name.ToLower().Contains("mirror"))
-                    {
-                        mr.material.SetFloat("roughnessFactor", 1);
-                    }
+                    Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: ERROR overriding GLTF materials");
+                    Debug.Log(ex);
                 }
             }
+
         }
 
         private void LoadAssetItems(List<DtHdAsset> assets)
