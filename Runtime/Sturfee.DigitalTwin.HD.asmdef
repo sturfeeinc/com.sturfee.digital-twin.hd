@@ -9,7 +9,6 @@
         "Sturfee-XRCS",
         "Sturfee-XRCS-Config",
         "Sturfee-XRCS-Models",
-		"glTFast",
 		"CesiumRuntime"
     ],
     "includePlatforms": [],
