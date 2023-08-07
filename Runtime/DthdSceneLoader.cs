@@ -39,6 +39,8 @@ namespace Sturfee.DigitalTwin.HD
         public static uint maximumSimultaneousTileLoads = 8;
         public static uint loadingDescendantLimit = 8;
         public static int maximumCachedBytes = 256 * 1024 * 1024; // 256 MB;
+        public static int culledScreenSpaceError = 32;
+        public static bool createPhysicsMeshes = true;
 
         private GameObject _parent;
         private GameObject Enhanced;
@@ -80,6 +82,8 @@ namespace Sturfee.DigitalTwin.HD
                     cesiumAsset.maximumSimultaneousTileLoads = DtHdSceneLoader.maximumSimultaneousTileLoads; // 8;
                     cesiumAsset.loadingDescendantLimit = DtHdSceneLoader.loadingDescendantLimit; // 8;
                     cesiumAsset.maximumCachedBytes = DtHdSceneLoader.maximumCachedBytes; // 256 * 1024 * 1024; // 256 MB
+                    cesiumAsset.culledScreenSpaceError = DtHdSceneLoader.culledScreenSpaceError; // 32;
+                    cesiumAsset.createPhysicsMeshes = DtHdSceneLoader.createPhysicsMeshes;
                     cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
 
                     // create helper for spawn points, etc
