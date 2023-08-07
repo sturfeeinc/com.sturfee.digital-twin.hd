@@ -35,6 +35,11 @@ namespace Sturfee.DigitalTwin.HD
     /// </summary>
     public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
     {
+        public static int maximumScreenSpaceError = 32;
+        public static uint maximumSimultaneousTileLoads = 8;
+        public static uint loadingDescendantLimit = 8;
+        public static int maximumCachedBytes = 256 * 1024 * 1024; // 256 MB;
+
         private GameObject _parent;
         private GameObject Enhanced;
         private Dictionary<string, GameObject> LoadedAssets;
@@ -71,10 +76,10 @@ namespace Sturfee.DigitalTwin.HD
                     asset.transform.parent = _parent.transform;
                     var cesiumAsset = asset.AddComponent<Cesium3DTileset>();
                     cesiumAsset.ionAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNzhmN2E0YS05ZmU2LTQwZDAtYTU2OS03YjlmMGZkOGYxYmUiLCJpZCI6MTI5MDg0LCJpYXQiOjE2ODczNDg0MjF9.uwHxAhuoNqSoFdIJUp5IgFA-MLtBG23WTfQKXrt6fmY";
-                    cesiumAsset.maximumScreenSpaceError = 32;
-                    cesiumAsset.maximumSimultaneousTileLoads = 8;
-                    cesiumAsset.loadingDescendantLimit = 8;
-                    cesiumAsset.maximumCachedBytes = 256 * 1024 * 1024; // 256 MB
+                    cesiumAsset.maximumScreenSpaceError = DtHdSceneLoader.maximumScreenSpaceError; // 32;
+                    cesiumAsset.maximumSimultaneousTileLoads = DtHdSceneLoader.maximumSimultaneousTileLoads; // 8;
+                    cesiumAsset.loadingDescendantLimit = DtHdSceneLoader.loadingDescendantLimit; // 8;
+                    cesiumAsset.maximumCachedBytes = DtHdSceneLoader.maximumCachedBytes; // 256 * 1024 * 1024; // 256 MB
                     cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
 
                     // create helper for spawn points, etc
