@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
+using Sturfee.Auth;
 
 
 namespace Sturfee.DigitalTwin.HD
@@ -339,7 +340,7 @@ namespace Sturfee.DigitalTwin.HD
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
             request.ContentType = "application/json; charset=utf-8";
-            // TODO: auth
+            AuthHelper.AddAuthHeaders(request);
 
             try
             {
@@ -395,7 +396,7 @@ namespace Sturfee.DigitalTwin.HD
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
             request.ContentType = "application/json; charset=utf-8";
-            // TODO: auth
+            AuthHelper.AddAuthHeaders(request);
 
             try
             {
