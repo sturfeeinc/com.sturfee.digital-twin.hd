@@ -9,7 +9,8 @@
         "Sturfee-XRCS",
         "Sturfee-XRCS-Config",
         "Sturfee-XRCS-Models",
-		"CesiumRuntime"
+		"CesiumRuntime",
+        "Sturfee.DigitalTwin.Auth"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
