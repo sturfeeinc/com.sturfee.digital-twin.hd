@@ -33,8 +33,15 @@ namespace Sturfee.DigitalTwin.HD
     /// <summary>
     /// A loader for DTHD Scenes in the form of scene-change persistent singleton. Contains methods for loading DTHD Scene and ScanMesh asynchronously.
     /// </summary>
-        public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
+    public class DtHdSceneLoader : SimpleSingleton<DtHdSceneLoader>
     {
+        public static int maximumScreenSpaceError = 32;
+        public static uint maximumSimultaneousTileLoads = 8;
+        public static uint loadingDescendantLimit = 8;
+        public static int maximumCachedBytes = 256 * 1024 * 1024; // 256 MB;
+        public static int culledScreenSpaceError = 32;
+        public static bool createPhysicsMeshes = true;
+
         private GameObject _parent;
         private GameObject Enhanced;
         private Dictionary<string, GameObject> LoadedAssets;
@@ -71,10 +78,12 @@ namespace Sturfee.DigitalTwin.HD
                     asset.transform.parent = _parent.transform;
                     var cesiumAsset = asset.AddComponent<Cesium3DTileset>();
                     cesiumAsset.ionAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNzhmN2E0YS05ZmU2LTQwZDAtYTU2OS03YjlmMGZkOGYxYmUiLCJpZCI6MTI5MDg0LCJpYXQiOjE2ODczNDg0MjF9.uwHxAhuoNqSoFdIJUp5IgFA-MLtBG23WTfQKXrt6fmY";
-                    cesiumAsset.maximumScreenSpaceError = 32;
-                    cesiumAsset.maximumSimultaneousTileLoads = 8;
-                    cesiumAsset.loadingDescendantLimit = 8;
-                    cesiumAsset.maximumCachedBytes = 256 * 1024 * 1024; // 256 MB
+                    cesiumAsset.maximumScreenSpaceError = DtHdSceneLoader.maximumScreenSpaceError; // 32;
+                    cesiumAsset.maximumSimultaneousTileLoads = DtHdSceneLoader.maximumSimultaneousTileLoads; // 8;
+                    cesiumAsset.loadingDescendantLimit = DtHdSceneLoader.loadingDescendantLimit; // 8;
+                    cesiumAsset.maximumCachedBytes = DtHdSceneLoader.maximumCachedBytes; // 256 * 1024 * 1024; // 256 MB
+                    cesiumAsset.culledScreenSpaceError = DtHdSceneLoader.culledScreenSpaceError; // 32;
+                    cesiumAsset.createPhysicsMeshes = DtHdSceneLoader.createPhysicsMeshes;
                     cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
 
                     // create helper for spawn points, etc
@@ -88,6 +97,16 @@ namespace Sturfee.DigitalTwin.HD
                     helper.SpawnPoint.transform.localPosition = new Vector3(layoutData.SpawnPositionX, layoutData.SpawnPositionY, layoutData.SpawnPositionZ);
                     //helper.SpawnPoint.transform.Rotate(new Vector3(layoutData.SpawnHeading - 90, 90, 90));// -90 points north
                     helper.SpawnPoint.transform.Rotate(new Vector3(0, layoutData.SpawnHeading, 0));
+
+                    // load the environment (reflection probes, lighting, etc)
+                    if (File.Exists($"{baseFolder}/environment.json"))
+                    {
+                        await LoadLightingAndReflections($"{baseFolder}/environment.json", _parent.transform, "Cesium");
+                    }
+                    else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                    {
+                        await LoadLightingAndReflections($"{baseFolder}/dt_environment.json", _parent.transform, "Cesium");
+                    }
                 }
                 else
                 {
@@ -103,13 +122,21 @@ namespace Sturfee.DigitalTwin.HD
                     _parent.transform.Rotate(-90, 0, 180);
 
                     // load the environment (reflection probes, lighting, etc)
-                    if (File.Exists($"{baseFolder}/environment.json"))
+                    try
                     {
-                        await LoadLightingAndReflections($"{baseFolder}/environment.json");
+                        if (File.Exists($"{baseFolder}/environment.json"))
+                        {
+                            await LoadLightingAndReflections($"{baseFolder}/environment.json", Enhanced.transform, "Unity");
+                        }
+                        else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                        {
+                            await LoadLightingAndReflections($"{baseFolder}/dt_environment.json", Enhanced.transform, "Unity");
+                        }
                     }
-                    else if (File.Exists($"{baseFolder}/dt_environment.json"))
+                    catch (Exception ex)
                     {
-                        await LoadLightingAndReflections($"{baseFolder}/dt_environment.json");
+                        Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: ERROR Loading Lighting data");
+                        Debug.Log(ex);
                     }
 
                     // set the position
@@ -199,7 +226,15 @@ namespace Sturfee.DigitalTwin.HD
 
             // load the asset items (instances)
             Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: Loading Asset Instances...");
-            LoadAssetItems(layoutData.Assets);
+            try
+            {
+                LoadAssetItems(layoutData.Assets);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: ERROR Loading Asset Instances");
+                Debug.Log(ex);
+            }            
         }
 
         private async Task _LoadScanMeshes(string dthdId, List<ScanMesh> scanMeshes)
@@ -256,6 +291,10 @@ namespace Sturfee.DigitalTwin.HD
                     var go = new GameObject($"GLTF_SCENE");
                     go.transform.SetParent(parent.transform);
                     success = await gltf.InstantiateMainSceneAsync(go.transform);
+                    foreach (MeshFilter mf in go.GetComponentsInChildren<MeshFilter>())
+                    {
+                        mf.gameObject.AddComponent<MeshCollider>();
+                    }
                     OnMeshLoaded(data, dataType, filePath, go, null);
                 }
 
@@ -350,50 +389,58 @@ namespace Sturfee.DigitalTwin.HD
 
             foreach (MeshRenderer mr in result.transform.GetComponentsInChildren<MeshRenderer>())
             {
-                Debug.Log($"MR HYDE: {mr}");
-                // force white base color and non-metallic
-                if (mr.material.mainTexture != null)
+                try
                 {
-                    mr.material.color = Color.white;
-                }
-                if (mr.material.HasProperty("_Metallic"))
-                {
-                    mr.material.SetFloat("_Metallic", 0);
-                }
-                if (mr.material.name.ToLower().Contains("mirror"))
-                {
-                    mr.material.SetFloat("_Metallic", 0.9f);
-                }
-                if (mr.material.name.ToLower().Contains("metal"))
-                {
-                    mr.material.SetFloat("_Metallic", 0.8f);
-                }
-
-                //if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
-                //{
-                //    mr.material.SetFloat("_Glossiness", 1);
-                //}
-
-                if (mr.material.HasProperty("_MetallicGlossMap")) // _MetallicGlossMap
-                {
-                    var metaalicRoughnessMap = mr.material.GetTexture("_MetallicGlossMap");
-                    if (metaalicRoughnessMap != null)
+                    // force white base color and non-metallic
+                    if (mr.material.mainTexture != null)
                     {
-                        if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
+                        mr.material.color = Color.white;
+                    }
+                    if (mr.material.HasProperty("_Metallic"))
+                    {
+                        mr.material.SetFloat("_Metallic", 0);
+                    }
+                    if (mr.material.name.ToLower().Contains("mirror"))
+                    {
+                        mr.material.SetFloat("_Metallic", 0.9f);
+                    }
+                    if (mr.material.name.ToLower().Contains("metal"))
+                    {
+                        mr.material.SetFloat("_Metallic", 0.8f);
+                    }
+
+                    //if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
+                    //{
+                    //    mr.material.SetFloat("_Glossiness", 1);
+                    //}
+
+                    if (mr.material.HasProperty("_MetallicGlossMap")) // _MetallicGlossMap
+                    {
+                        var metaalicRoughnessMap = mr.material.GetTexture("_MetallicGlossMap");
+                        if (metaalicRoughnessMap != null)
                         {
-                            mr.material.SetFloat("_Glossiness", 1);
+                            if (mr.material.HasProperty("_Glossiness")) // _MetallicGlossMap
+                            {
+                                mr.material.SetFloat("_Glossiness", 1);
+                            }
+                        }
+                    }
+
+                    if (mr.material.HasProperty("roughnessFactor"))
+                    {
+                        if (!mr.material.name.ToLower().Contains("mirror"))
+                        {
+                            mr.material.SetFloat("roughnessFactor", 1);
                         }
                     }
                 }
-
-                if (mr.material.HasProperty("roughnessFactor"))
+                catch (Exception ex)
                 {
-                    if (!mr.material.name.ToLower().Contains("mirror"))
-                    {
-                        mr.material.SetFloat("roughnessFactor", 1);
-                    }                        
+                    Debug.Log($"[Sturfee.DigitalTwin.HD]:DtHdSceneLoader :: ERROR overriding GLTF materials");
+                    Debug.Log(ex);
                 }
             }
+
         }
 
         private void LoadAssetItems(List<DtHdAsset> assets)
@@ -424,7 +471,7 @@ namespace Sturfee.DigitalTwin.HD
             }
         }
 
-        private async Task LoadLightingAndReflections(string file)
+        private async Task LoadLightingAndReflections(string file, Transform baseParent, string type)
         {
             var envDataJson = await File.ReadAllTextAsync(file);
 
@@ -432,13 +479,26 @@ namespace Sturfee.DigitalTwin.HD
             {
                 var envData = JsonConvert.DeserializeObject<DtEnvironment>(envDataJson);
 
-                if (envData != null && envData.Unity != null)
+                if (envData != null)
                 {
+                    if (type == "Cesium" && envData.Cesium == null) { return; }
+                    if (type == "Unity" && envData.Unity == null) { return; }
+
                     var parent = new GameObject($"Lighting-and-Reflections");
-                    parent.transform.SetParent(Enhanced.transform);
+                    parent.transform.SetParent(baseParent);//Enhanced.transform);
                     parent.transform.localPosition = Vector3.zero;
 
-                    foreach (var dtReflection in envData.Unity.ReflectionProbes)
+                    UnityReflectionProbe[] reflectionProbes = new UnityReflectionProbe[] { };
+                    if (type == "Cesium")
+                    {
+                        reflectionProbes = envData.Cesium.ReflectionProbes;
+                    }
+                    if (type == "Unity")
+                    {
+                        reflectionProbes = envData.Unity.ReflectionProbes;
+                    }
+
+                    foreach (var dtReflection in reflectionProbes)
                     {
                         try
                         {
@@ -450,7 +510,17 @@ namespace Sturfee.DigitalTwin.HD
                         }
                     }
 
-                    foreach (var light in envData.Unity.Lights)
+                    UnityLight[] lights = new UnityLight[] { };
+                    if (type == "Cesium")
+                    {
+                        lights = envData.Cesium.Lights;
+                    }
+                    if (type == "Unity")
+                    {
+                        lights = envData.Unity.Lights;
+                    }
+
+                    foreach (var light in lights)
                     {
                         try
                         {
