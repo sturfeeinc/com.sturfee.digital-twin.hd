@@ -51,7 +51,7 @@ namespace Sturfee.DigitalTwin.HD
         /// </summary>
         /// <param name="dthdId">DTHD ID</param>
         /// <returns>Parent transform of instantiated scene</returns>
-        public async Task<GameObject> LoadDtHdAsync(string dthdId)
+        public async Task<GameObject> LoadDtHdAsync(string dthdId, int version = -1)
         {
             var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
             var dataFilePath = Path.Combine(baseFolder, "data.json");
@@ -63,9 +63,19 @@ namespace Sturfee.DigitalTwin.HD
                 var layoutData = JsonConvert.DeserializeObject<DtHdLayout>(dataJson);
                 if (string.IsNullOrEmpty(dataJson)) { Debug.LogError($"Error :: Cannot read data file for {dthdId}"); return null; }
 
-                if (!string.IsNullOrEmpty(layoutData.CesiumAssetId))
+                var cesiumId = layoutData.CesiumAssetId;
+                if (version != -1)
                 {
-                    Debug.Log($"[STURFEE] :: Using Cesium ({layoutData.CesiumAssetId}) | {layoutData.Location.Latitude}, {layoutData.Location.Longitude}");
+                    var versionData = layoutData.Versions.FirstOrDefault(x => x.Version == version);
+                    if (versionData != null)
+                    {
+                        cesiumId = versionData.CesiumAssetId;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(cesiumId))
+                {
+                    Debug.Log($"[STURFEE] :: Using Cesium ({cesiumId}) | {layoutData.Location.Latitude}, {layoutData.Location.Longitude}");
                     _parent = new GameObject($"DTHDScene_{dthdId}");
                     _parent.transform.position = Vector3.zero;
 
@@ -84,7 +94,7 @@ namespace Sturfee.DigitalTwin.HD
                     cesiumAsset.maximumCachedBytes = DtHdSceneLoader.maximumCachedBytes; // 256 * 1024 * 1024; // 256 MB
                     cesiumAsset.culledScreenSpaceError = DtHdSceneLoader.culledScreenSpaceError; // 32;
                     cesiumAsset.createPhysicsMeshes = DtHdSceneLoader.createPhysicsMeshes;
-                    cesiumAsset.ionAssetID = int.Parse(layoutData.CesiumAssetId);
+                    cesiumAsset.ionAssetID = int.Parse(cesiumId);
 
                     // create helper for spawn points, etc
                     var helper = asset.AddComponent<DtHdLayoutHelper>();
