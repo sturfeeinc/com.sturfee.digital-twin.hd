@@ -34,6 +34,12 @@ namespace Sturfee.DigitalTwin.HD
         Task RefreshCacheInfoAsync(string dtHdId);
         Task<DtHdLayout> GetDtHdLayout(string dtHdId, bool skipCache = false);
         Task<ScanMesh> GetScanMesh(string dtHdId, string scanId, bool skipCache = false);
+
+        // bool IsVersionCached(string dthdId, int version);
+        // Task DownloadVersion(string dthdId, int version);
+        // void DeleteCachedVersion(string dthdId, int version);
+        Task<DtHdLayoutVersion> PublishVersion(string dthdId, int version);
+        Task<DtHdLayoutVersion> ArchiveVersion(string dthdId, int version);
     }
 
     /// <summary>
@@ -317,6 +323,113 @@ namespace Sturfee.DigitalTwin.HD
                 Directory.Delete(baseFolder, true);
             }
         }
+
+        /// <summary>
+        /// Publish a version of the DT HD mesh that is in 'REVIEW' status. NOTE: will archive the existing 'LIVE' DT HD mesh.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// /// <param name="version">version number to publish</param>
+        public async Task<DtHdLayoutVersion> PublishVersion(string dthdId, int version)
+        {
+            // get download URL
+            string url = $"{DtConstants.DTHD_LAYOUT}/{dthdId}/version/{version}/version_status";
+
+            SturfeeDebug.Log($"Publishing version {version} => {url}");
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "PUT";
+            request.ContentType = "application/json; charset=utf-8";
+            AuthHelper.AddAuthHeaders(request);
+
+            try
+            {
+                using (var streamWriter = new StreamWriter(request.GetRequestStream()))
+                {
+                    string json = JsonConvert.SerializeObject(new {
+                        versionStatus = $"{DtHdLayoutVersionStatus.LIVE}"
+                    });
+                    Debug.Log(json);
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                }
+
+                var response = await request.GetResponseAsync() as HttpWebResponse;
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    Debug.LogError($"ERROR:: API => {response.StatusCode} - {response.StatusDescription}");
+                    Debug.LogError(response);
+                    throw new Exception(response.StatusDescription);
+                }
+
+                StreamReader reader = new StreamReader(response.GetResponseStream());
+                string jsonResponse = reader.ReadToEnd();
+
+                Debug.Log(jsonResponse);
+
+                var result = JsonConvert.DeserializeObject<DtHdLayoutVersion>(jsonResponse);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error publishing DT HD with ID = {dthdId} and version = {version}");
+                Debug.LogError(ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Archive an existing version of the DT HD mesh.
+        /// </summary>
+        /// <param name="dthdId">DTHD ID</param>
+        /// <param name="version">version number to archive</param>
+        public async Task<DtHdLayoutVersion> ArchiveVersion(string dthdId, int version)
+        {
+            // get download URL
+            string url = $"{DtConstants.DTHD_LAYOUT}/{dthdId}/version/{version}/version_status";
+
+            SturfeeDebug.Log($"Archiving version {version} => {url}");
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "PUT";
+            request.ContentType = "application/json; charset=utf-8";
+            AuthHelper.AddAuthHeaders(request);
+
+            try
+            {
+                using (var streamWriter = new StreamWriter(request.GetRequestStream()))
+                {
+                    string json = JsonConvert.SerializeObject(new {
+                        versionStatus = $"{DtHdLayoutVersionStatus.ARCHIVED}"
+                    });
+                    Debug.Log(json);
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                }
+
+                var response = await request.GetResponseAsync() as HttpWebResponse;
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    Debug.LogError($"ERROR:: API => {response.StatusCode} - {response.StatusDescription}");
+                    Debug.LogError(response);
+                    throw new Exception(response.StatusDescription);
+                }
+
+                StreamReader reader = new StreamReader(response.GetResponseStream());
+                string jsonResponse = reader.ReadToEnd();
+
+                Debug.Log(jsonResponse);
+
+                var result = JsonConvert.DeserializeObject<DtHdLayoutVersion>(jsonResponse);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error archiving DT HD with ID = {dthdId} and version = {version}");
+                Debug.LogError(ex);
+                throw;
+            }
+        }
+
 
         private async Task<DtHdLayout> FetchSceneData(string DthdId, bool forceRefresh = false)
         {
