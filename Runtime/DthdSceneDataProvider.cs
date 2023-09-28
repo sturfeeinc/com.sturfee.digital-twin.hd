@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using SturfeeVPS.Core;
 using SturfeeVPS.Core.Models;
 using SturfeeVPS.Core.Constants;
@@ -95,7 +96,11 @@ namespace Sturfee.DigitalTwin.HD
             {
                 using (var streamWriter = new StreamWriter(request.GetRequestStream()))
                 {
-                    string json = JsonConvert.SerializeObject(layout);
+                    string json = JsonConvert.SerializeObject(layout, new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        NullValueHandling = NullValueHandling.Ignore
+                    });
                     Debug.Log(json);
                     streamWriter.Write(json);
                     streamWriter.Flush();
@@ -176,7 +181,11 @@ namespace Sturfee.DigitalTwin.HD
             {
                 using (var streamWriter = new StreamWriter(request.GetRequestStream()))
                 {
-                    string json = JsonConvert.SerializeObject(scan);
+                    string json = JsonConvert.SerializeObject(scan, new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        NullValueHandling = NullValueHandling.Ignore
+                    });
                     Debug.Log(json);
                     streamWriter.Write(json);
                     streamWriter.Flush();
@@ -453,6 +462,10 @@ namespace Sturfee.DigitalTwin.HD
                 {
                     string json = JsonConvert.SerializeObject(new {
                         versionStatus = $"{DtHdLayoutVersionStatus.LIVE}"
+                    }, new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        NullValueHandling = NullValueHandling.Ignore
                     });
                     Debug.Log(json);
                     streamWriter.Write(json);
@@ -506,6 +519,10 @@ namespace Sturfee.DigitalTwin.HD
                 {
                     string json = JsonConvert.SerializeObject(new {
                         versionStatus = $"{DtHdLayoutVersionStatus.ARCHIVED}"
+                    }, new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        NullValueHandling = NullValueHandling.Ignore
                     });
                     Debug.Log(json);
                     streamWriter.Write(json);
@@ -560,6 +577,10 @@ namespace Sturfee.DigitalTwin.HD
                     string json = JsonConvert.SerializeObject(new
                     {
                         versionStatus = $"{DtHdLayoutVersionStatus.REVIEW}"
+                    }, new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        NullValueHandling = NullValueHandling.Ignore
                     });
                     Debug.Log(json);
                     streamWriter.Write(json);
@@ -618,6 +639,10 @@ namespace Sturfee.DigitalTwin.HD
                         spawnPositionY = versionData.SpawnPositionY,
                         spawnPositionZ = versionData.SpawnPositionZ,
                         spawnHeading = versionData.SpawnHeading
+                    }, new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        NullValueHandling = NullValueHandling.Ignore
                     });
                     Debug.Log(json);
                     streamWriter.Write(json);
