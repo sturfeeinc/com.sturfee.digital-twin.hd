@@ -192,14 +192,18 @@ namespace Sturfee.DigitalTwin.HD
 
                 if (scanMeshesToLoad.Any())
                 {
-                    await _LoadScanMeshes(dthdId, scanMeshesToLoad);
+                    await _LoadScanMeshes(layoutData, scanMeshesToLoad);
                 }
                 else
                 {
                     throw CreateException(DtHdErrorCode.NO_MESH_DATA, "No meshes to load");
                 }
 
-                _parent.transform.Rotate(-90, 0, 180);
+                var cesiumScans = scanMeshesToLoad.Where(x => !string.IsNullOrEmpty(x.CesiumAssetId));
+                if (!cesiumScans.Any())
+                {
+                    _parent.transform.Rotate(-90, 0, 180);
+                }                    
             }
             else
             {
@@ -247,24 +251,56 @@ namespace Sturfee.DigitalTwin.HD
             }            
         }
 
-        private async Task _LoadScanMeshes(string dthdId, List<ScanMesh> scanMeshes)
+        private async Task _LoadScanMeshes(DtHdLayout layout, List<ScanMesh> scanMeshes)
         {
-            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", dthdId);
+            var baseFolder = Path.Combine(Application.persistentDataPath, "DTHD", layout.DtHdId);
             var scanMeshFolder = Path.Combine(baseFolder, "ScanMeshes");
-            if (!Directory.Exists(scanMeshFolder))
-            {
-                throw CreateException(DtHdErrorCode.DATA_NOT_DOWNLOADED, "Scan meshes not downloaded!");
-            }
 
-            _parent = new GameObject($"DTHDScans_{scanMeshes.Count}_{dthdId}");
-            _parent.transform.position = Vector3.zero;
+            var cesiumScans = scanMeshes.Where(x => !string.IsNullOrEmpty(x.CesiumAssetId));
 
-            // load all scan meshes
-            foreach (var scanmesh in scanMeshes)
+            if (cesiumScans.Any())
             {
-                if (!string.IsNullOrEmpty(scanmesh.ScanMeshUrl) && scanmesh.Status != "ARCHIVED")
+                _parent = new GameObject($"DTHDScans_{scanMeshes.Count}_{layout.DtHdId}");
+                _parent.transform.position = Vector3.zero;
+
+                var cesiumGeo = _parent.AddComponent<CesiumGeoreference>();
+                cesiumGeo.latitude = layout.Location.Latitude;
+                cesiumGeo.longitude = layout.Location.Longitude;
+                cesiumGeo.height = layout.Location.Altitude;
+
+                // load all scan meshes
+                foreach (var scanmesh in scanMeshes)
                 {
-                    await ImportDtMesh($"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb", scanmesh, "DtHdScanMesh", _parent);
+                    var asset = new GameObject($"CesiumAsset_Scan_{scanmesh.DtHdScanId}");
+                    asset.transform.parent = _parent.transform;
+                    var cesiumAsset = asset.AddComponent<Cesium3DTileset>();
+                    cesiumAsset.ionAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNzhmN2E0YS05ZmU2LTQwZDAtYTU2OS03YjlmMGZkOGYxYmUiLCJpZCI6MTI5MDg0LCJpYXQiOjE2ODczNDg0MjF9.uwHxAhuoNqSoFdIJUp5IgFA-MLtBG23WTfQKXrt6fmY";
+                    cesiumAsset.maximumScreenSpaceError = DtHdSceneLoader.maximumScreenSpaceError; // 32;
+                    cesiumAsset.maximumSimultaneousTileLoads = DtHdSceneLoader.maximumSimultaneousTileLoads; // 8;
+                    cesiumAsset.loadingDescendantLimit = DtHdSceneLoader.loadingDescendantLimit; // 8;
+                    cesiumAsset.maximumCachedBytes = DtHdSceneLoader.maximumCachedBytes; // 256 * 1024 * 1024; // 256 MB
+                    cesiumAsset.culledScreenSpaceError = DtHdSceneLoader.culledScreenSpaceError; // 32;
+                    cesiumAsset.createPhysicsMeshes = DtHdSceneLoader.createPhysicsMeshes;
+                    cesiumAsset.ionAssetID = int.Parse(scanmesh.CesiumAssetId);
+                }
+            }
+            else
+            {
+                if (!Directory.Exists(scanMeshFolder))
+                {
+                    throw CreateException(DtHdErrorCode.DATA_NOT_DOWNLOADED, "Scan meshes not downloaded!");
+                }
+
+                _parent = new GameObject($"DTHDScans_{scanMeshes.Count}_{layout.DtHdId}");
+                _parent.transform.position = Vector3.zero;
+
+                // load all scan meshes
+                foreach (var scanmesh in scanMeshes)
+                {
+                    if (!string.IsNullOrEmpty(scanmesh.ScanMeshUrl) && scanmesh.Status != "ARCHIVED")
+                    {
+                        await ImportDtMesh($"{scanMeshFolder}/{scanmesh.DtHdScanId}.glb", scanmesh, "DtHdScanMesh", _parent);
+                    }
                 }
             }
         }
